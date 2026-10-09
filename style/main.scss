@@ -638,12 +638,6 @@ th { background: var(--surface); }
     gap: 0.5rem;
     justify-content: flex-end;
 }
-.teaser {
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    line-height: 1.5;
-    margin: 0;
-}
 
 /* Solid top bar for section pages: compact height, horizontal menu.
  * Overrides the tall vertical carousel stacking above. */
@@ -661,7 +655,6 @@ th { background: var(--surface); }
 }
 .navbar-solid .navbar-menu a { text-align: left; }
 .navbar-solid .chip-user { text-align: left; }
-.navbar-solid .gadget-row select { font-size: 0.9rem; }
 
 /* Human-shaped form controls for sign-in, settings, and models. */
 .family-card input,
@@ -717,3 +710,63 @@ th { background: var(--surface); }
     cursor: pointer;
 }
 .provider-pick input { width: auto; }
+
+/* Icon-button display gadgets ported from the mcp-ui tool controls. */
+.ctl { width: 1.75rem; height: 1.75rem; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: var(--radius-sm); background: none; color: var(--text-muted); cursor: pointer; transition: color .15s ease, border-color .15s ease, background .15s ease; }
+.ctl:hover { color: var(--text); border-color: var(--accent); }
+.ctl.active { color: var(--bg); background: var(--accent); border-color: var(--accent); }
+.ctl svg { width: 15px; height: 15px; }
+/* On the dark navbar surfaces (floating masthead row and solid bar) the
+   gadgets stay fully transparent with light icons. */
+.navbar .ctl { width: 2rem; height: 2rem; border-color: transparent; color: #dbe3ee; background: none; }
+.navbar .ctl:hover { color: #f8fafc; border-color: transparent; }
+.navbar .ctl.active { color: #93c5fd; background: none; border-color: transparent; }
+.navbar .ctl svg { width: 17px; height: 17px; }
+
+/* Chip dropdown: absolutely positioned panel for readability. */
+.chip-wrap { position: relative; display: inline-grid; }
+.chip-dropdown { position: absolute; top: calc(100% + 0.35rem); right: 0; z-index: 20; display: grid; gap: 0.15rem; min-width: 13rem; padding: 0.35rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 10px 30px rgba(2, 6, 23, 0.45); }
+.chip-dropdown a { color: var(--text); text-decoration: none; padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); font-size: 0.95rem; text-align: left; }
+.chip-dropdown a:hover { background: var(--accent-soft); color: var(--text); }
+.chip-user { color: var(--text-secondary); cursor: pointer; padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); text-align: left; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem; }
+.chip-user:hover { color: var(--text); background: var(--accent-soft); }
+
+/* Section pages: heading and card layouts on the plain surface. */
+.page-main { grid-template-rows: none; align-content: start; gap: 1.5rem; }
+.page-head { display: grid; gap: 0.35rem; }
+.page-head h1 { font-size: clamp(1.5rem, 1rem + 2vw, 2.25rem); font-weight: 700; letter-spacing: -0.03em; color: var(--text); margin: 0; }
+.page-head p { color: var(--text-muted); margin: 0; font-size: clamp(0.9rem, 0.8rem + 0.4vw, 1.05rem); }
+.page-head .head-row { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+.page-head .head-row p { margin: 0; }
+.page-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr)); gap: 1.25rem; align-content: start; }
+
+/* Form fields: label + control in a 2-column grid. */
+.field { display: grid; grid-template-columns: 9rem minmax(0, 1fr); gap: 0.75rem; align-items: center; }
+.field > label { color: var(--text-secondary); font-size: 0.9rem; font-weight: 500; }
+@media (max-width: 560px) { .field { grid-template-columns: minmax(0, 1fr); gap: 0.25rem; } }
+
+/* Button rows and identity lists. */
+.btn-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.btn-row button { font: inherit; font-size: 0.95rem; font-weight: 600; color: #fff; background: var(--accent); border: 1px solid transparent; border-radius: var(--radius-sm); padding: 0.55rem 1.1rem; cursor: pointer; }
+.btn-row button:hover { filter: brightness(1.08); }
+button.secondary { color: var(--text); background: var(--surface); border: 1px solid var(--border); }
+button.secondary:hover { border-color: var(--accent); color: var(--accent); filter: none; }
+button.small { font-size: 0.85rem; padding: 0.35rem 0.7rem; }
+
+.id-list { display: grid; gap: 0.4rem; margin: 0.75rem 0; }
+.id-list button { display: flex; align-items: center; gap: 0.6rem; width: 100%; text-align: left; justify-content: flex-start; font: inherit; font-size: 0.95rem; font-weight: 500; color: #fff; background: var(--accent); border: 1px solid transparent; border-radius: var(--radius-sm); padding: 0.55rem 0.75rem; cursor: pointer; }
+.id-list button:hover { filter: brightness(1.08); }
+.id-list .avatar-fallback { width: 1.75rem; height: 1.75rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.25); color: var(--accent); font-weight: 700; font-size: 0.9rem; flex-shrink: 0; }
+
+.row-list { display: grid; gap: 0.35rem; margin: 0.5rem 0; }
+.row-list .row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.75rem; align-items: center; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.45rem 0.75rem; font-size: 0.9rem; }
+.row-list .row span { color: var(--text); word-break: break-all; }
+
+.notice { color: #c04650; font-size: 0.9rem; margin: 0.5rem 0 0; }
+html[data-appearance="dark"] .notice { color: #e06c75; }
+
+.page-main a { color: var(--accent); }
+
+/* Gridify family-card internals. */
+.family-card { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.6rem; align-content: start; }
+.family-card h4 { font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); margin: 0.75rem 0 0.25rem; letter-spacing: 0.02em; text-transform: uppercase; }
