@@ -72,6 +72,7 @@ jobs:
           script: |
             set -e
             mkdir -p /opt/exosystems_net/bin /opt/exosystems_net/site
+            systemctl stop exosystems-net || true
             cp /opt/exosystems_net/incoming/deploy/exosystems_net-ssr /opt/exosystems_net/bin/exosystems_net-ssr
             chmod +x /opt/exosystems_net/bin/exosystems_net-ssr
             cp /opt/exosystems_net/incoming/deploy/allowed_dids.json /opt/exosystems_net/allowed_dids.json
