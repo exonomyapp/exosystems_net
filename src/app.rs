@@ -173,7 +173,7 @@ fn SigninPage() -> impl IntoView {
     });
     let create_action = Action::new(|_: &()| async move { create_identity().await });
 
-    Effect::new(move |_| {
+    Effect::new_sync(move |_| {
         if let Some(Ok(nonce)) = nonce_action.value().get() {
             if answered.get() == nonce {
                 return;
@@ -478,7 +478,7 @@ fn SettingsPage() -> impl IntoView {
         },
     );
     let (settings_loaded, set_settings_loaded) = signal(false);
-    Effect::new(move |_| {
+    Effect::new_sync(move |_| {
         if !settings_loaded.get() {
             if let Some(Some(s)) = server_settings.get() {
                 if !s.appearance.is_empty() {
@@ -510,7 +510,7 @@ fn SettingsPage() -> impl IntoView {
         let (token, did) = input.clone();
         async move { revoke_access(token, did).await }
     });
-    Effect::new(move |_| {
+    Effect::new_sync(move |_| {
         if let Some(r) = grant_action.value().get() {
             match r {
                 Ok(()) => {
