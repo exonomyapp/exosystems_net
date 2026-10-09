@@ -23,7 +23,7 @@ ed25519-dalek = { version = "2.2", features = ["rand_core"] }
 bs58 = { version = "0.5" }
 rand = { version = "0.8" }
 web-sys = { version = "0.3", features = ["Window", "Storage"] }
-exocore = { path = "../exotalk/exoengine/exocore", optional = true }
+exocore = { path = "vendor/exocore", optional = true }
 reqwest = { version = "0.12", features = ["json"], optional = true }
 
 # Vendored one-line fix: upstream form_errors.rs fails type inference
