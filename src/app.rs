@@ -195,9 +195,10 @@ fn HomePage() -> impl IntoView {
     let identity = load_identity();
     view! {
         <header class="masthead">
-            <div class="slide slide-1"></div>
-            <div class="slide slide-2"></div>
-            <FloatingGadgets identity=identity/>
+                    <div class="slide slide-1"></div>
+                    <div class="slide slide-2"></div>
+                    <div class="screen"></div>
+                    <FloatingGadgets identity=identity/>
             <section class="hero">
                 <div class="tagline-block">
                     <p><span class="t1">"Hello, World! We're building something new."</span> <span class="t2">"Private by design. Connected by nature."</span><span class="t-sub">"... for the software was made for the man, not the man for the software!"</span></p>
