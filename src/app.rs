@@ -5,8 +5,6 @@ use leptos_router::{
     hooks::use_navigate,
     StaticSegment,
 };
-use radix_leptos::Button as RadixButton;
-use leptos_forms_rs::components::*;
 
 use crate::auth::{
     active_did, answer_nonce, clear_token, create_identity, delete_identity, docs_content,
@@ -382,16 +380,12 @@ fn SigninPage() -> impl IntoView {
                             <p><button on:click=move |_| { set_notice.set(String::new()); set_did_input.set(did.clone()); nonce_action.dispatch(did.clone()); }>{u.display_name}</button></p>
                         }
                     }).collect::<Vec<_>>())}
-                    <p><Input
-                        name="did".to_string()
-                        placeholder="did:peer:…".to_string()
-                        on_change=Callback::new(move |v: String| set_did_input.set(v))
-                    /></p>
+                    <p><input placeholder="did:peer:…" on:input=move |ev| set_did_input.set(event_target_value(&ev))/></p>
                     <p><input type="password" placeholder="secret" on:input=move |ev| set_secret_input.set(event_target_value(&ev))/></p>
-                    <p><RadixButton on_click=Callback::new(move |_| {
+                    <p><button on:click=move |_| {
                         set_notice.set(String::new());
                         nonce_action.dispatch(did_input.get());
-                    })>"Continue"</RadixButton></p>
+                    }>"Continue"</button></p>
                     <p>{move || notice.get()}</p>
                 </div>
                 <div class="family-card">
@@ -402,9 +396,9 @@ fn SigninPage() -> impl IntoView {
                         view! {
                             <p>"Generate a peer identity here with its display name, then it signs in."</p>
                             <p><input placeholder="Display name" on:input=move |ev| set_name_input.set(event_target_value(&ev))/></p>
-                            <p><RadixButton on_click=Callback::new(move |_| {
+                            <p><button on:click=move |_| {
                                 create_action.dispatch((name_input.get(), String::new()));
-                            })>"Generate identity"</RadixButton></p>
+                            }>"Generate identity"</button></p>
                         }.into_any()
                     })}
                 </div>
@@ -467,11 +461,11 @@ fn DocsPage() -> impl IntoView {
                                                 <div class="family-card">
                                                     <h3>"Gated docs"</h3>
                                                     <p>{format!("Signed in as {}. This page is visible only to approved identities.", view.did)}</p>
-                                                    <p><RadixButton on_click=Callback::new(move |_| {
+                                                    <p><button on:click=move |_| {
                                                         let t = read_token().unwrap_or_default();
                                                         let d = active_did().unwrap_or_default();
                                                         logout.dispatch((t, d));
-                                                    })>"Sign out"</RadixButton></p>
+                                                    }>"Sign out"</button></p>
                                                 </div>
                                             }.into_any()
                                         } else {
