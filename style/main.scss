@@ -630,3 +630,76 @@ th { background: var(--surface); }
     line-height: 1.5;
     margin: 0;
 }
+
+/* Solid top bar for section pages: compact height, horizontal menu.
+ * Overrides the tall vertical carousel stacking above. */
+.navbar-solid {
+    height: auto;
+    min-height: 64px;
+    padding: 0.6rem 2.5rem;
+    align-items: center;
+}
+.navbar-solid .navbar-menu {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0;
+}
+.navbar-solid .navbar-menu a { text-align: left; }
+.navbar-solid .chip-user { text-align: left; }
+.navbar-solid .gadget-row select { font-size: 0.9rem; }
+
+/* Human-shaped form controls for sign-in, settings, and models. */
+.family-card input,
+.family-card select,
+.models input,
+.models select {
+    font: inherit;
+    font-size: 0.95rem;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.55rem 0.75rem;
+    width: 100%;
+    max-width: 22rem;
+}
+.family-card button,
+.models button {
+    font: inherit;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #fff;
+    background: var(--accent);
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    padding: 0.55rem 1.1rem;
+    cursor: pointer;
+}
+.family-card button:hover,
+.models button:hover { filter: brightness(1.08); }
+.models table { font-size: 0.9rem; }
+.models th[data-sort] { cursor: pointer; user-select: none; }
+.ops-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.75rem;
+    align-items: start;
+    margin-bottom: 1rem;
+}
+.provider-pick {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+.provider-pick label {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.35rem 0.6rem;
+    cursor: pointer;
+}
+.provider-pick input { width: auto; }

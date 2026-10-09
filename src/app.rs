@@ -143,6 +143,25 @@ fn FloatingGadgets(identity: Resource<Option<IdentityState>>) -> impl IntoView {
                 <A href="/">"Home"</A>
                 {move || identity.get().flatten().filter(|id| id.model_updates).map(|_| view! { <A href="/models">"Models"</A> })}
                 <A href="/settings">"Settings"</A>
+                <span class="gadget-row">
+                    <select
+                        prop:value=move || appearance.get()
+                        on:change=move |ev| { set_appearance.set(event_target_value(&ev)); apply_display.clone()(); }
+                        aria-label="Appearance"
+                    >
+                        <option value="system">"System"</option>
+                        <option value="light">"Light"</option>
+                        <option value="dark">"Dark"</option>
+                    </select>
+                    <select
+                        prop:value=move || width.get()
+                        on:change=move |ev| { set_width.set(event_target_value(&ev)); apply_display.clone()(); }
+                        aria-label="Width"
+                    >
+                        <option value="normal">"Normal"</option>
+                        <option value="wide">"Wide"</option>
+                    </select>
+                </span>
                 {move || match identity.get().flatten() {
                     Some(id) => view! {
                         <span class="identity-chip" on:click=move |_| set_chip_open.set(!chip_open.get())>
@@ -163,23 +182,6 @@ fn FloatingGadgets(identity: Resource<Option<IdentityState>>) -> impl IntoView {
                                 <A href="/signin">"Add identity"</A>
                             </span>
                         })}
-                        <span class="gadget-row">
-                            <select
-                                prop:value=move || appearance.get()
-                                on:change=move |ev| { set_appearance.set(event_target_value(&ev)); apply_display.clone()(); }
-                            >
-                                <option value="system">"System"</option>
-                                <option value="light">"Light"</option>
-                                <option value="dark">"Dark"</option>
-                            </select>
-                            <select
-                                prop:value=move || width.get()
-                                on:change=move |ev| { set_width.set(event_target_value(&ev)); apply_display.clone()(); }
-                            >
-                                <option value="normal">"Normal"</option>
-                                <option value="wide">"Wide"</option>
-                            </select>
-                        </span>
                     }.into_any(),
                     None => view! { <A href="/signin">"Sign in"</A> }.into_any(),
                 }}
@@ -366,7 +368,7 @@ fn SigninPage() -> impl IntoView {
         <ModelsNavbar show_models=false display_name=String::new()/>
         <main class="main">
             <section class="hero">
-                <span class="hero-brand">"ExoSystems"</span>
+                
                 <h1>"Sign in."</h1>
                 <p class="hero-tagline">"Your identity lives with you. Sign in with your peer identity and stay on ExoSystems.net."</p>
             </section>
@@ -452,7 +454,7 @@ fn DocsPage() -> impl IntoView {
                     <ModelsNavbar show_models=named.0 display_name=named.1/>
                     <main class="main">
                         <section class="hero">
-                            <span class="hero-brand">"ExoSystems"</span>
+                            
                             <h1>"Docs."</h1>
                         </section>
                         <section class="family">
@@ -516,7 +518,6 @@ fn ModelsPage() -> impl IntoView {
             }
         },
     );
-    let rows = Resource::new(|| (), |_| async move { registry_rows().await.unwrap_or_default() });
     view! {
         <Suspense fallback=|| view! { <p>"Checking identity…"</p> }>
             {move || gate.get().map(|g| match g {
@@ -528,16 +529,7 @@ fn ModelsPage() -> impl IntoView {
                             <section class="runs"><h2>"Runs"</h2></section>
                             <section class="models">
                                 <h2>"Models"</h2>
-                                <Suspense fallback=|| view! { <p>"Loading registry…"</p> }>
-                                    {move || rows.get().map(|list: Vec<ModelRow>| view! {
-                                        <table>
-                                            <tr><th>"Model"</th><th>"Provider"</th><th>"Context"</th><th>"Last tested"</th></tr>
-                                            {list.into_iter().map(|m| view! {
-                                                <tr><td>{m.model_id}</td><td>{m.provider}</td><td>{m.context_window.map(|c| c.to_string()).unwrap_or_default()}</td><td>{m.last_tested.unwrap_or_default()}</td></tr>
-                                            }).collect::<Vec<_>>()}
-                                        </table>
-                                    })}
-                                </Suspense>
+                                <ModelsTable/>
                             </section>
                         </main>
                     }.into_any()
@@ -547,6 +539,135 @@ fn ModelsPage() -> impl IntoView {
                     <main class="main"><p><A href="/signin">"Sign in with a delegated identity to read the registry."</A></p></main>
                 }.into_any(),
             })}
+        </Suspense>
+    }
+}
+
+/// Registry table with search-as-keystroke, provider multi-pick, and
+/// three-state sorting. The picker ports the oc-worker multi-select
+/// pattern: checkboxes filter the rows below as they toggle.
+#[component]
+fn ModelsTable() -> impl IntoView {
+    let rows = Resource::new(|| (), |_| async move { registry_rows().await.unwrap_or_default() });
+    let (query, set_query) = signal(String::new());
+    let (picked, set_picked) = signal(std::collections::HashSet::<String>::new());
+    let (picked_init, set_picked_init) = signal(false);
+    let (sort_col, set_sort_col) = signal(String::new());
+    let (sort_dir, set_sort_dir) = signal(0i8);
+
+    Effect::new_sync(move |_| {
+        if !picked_init.get() {
+            if let Some(list) = rows.get() {
+                let mut set = std::collections::HashSet::new();
+                for m in &list {
+                    set.insert(m.provider.clone());
+                }
+                set_picked.set(set);
+                set_picked_init.set(true);
+            }
+        }
+    });
+
+    let providers = move || {
+        let mut names: Vec<String> = rows
+            .get()
+            .unwrap_or_default()
+            .iter()
+            .map(|m| m.provider.clone())
+            .collect::<std::collections::HashSet<_>>()
+            .into_iter()
+            .collect();
+        names.sort();
+        names
+    };
+
+    let shown = move || {
+        let q = query.get().to_lowercase();
+        let pick = picked.get();
+        let mut list: Vec<ModelRow> = rows
+            .get()
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|m| pick.contains(&m.provider))
+            .filter(|m| {
+                q.is_empty()
+                    || m.model_id.to_lowercase().contains(&q)
+                    || m.provider.to_lowercase().contains(&q)
+            })
+            .collect();
+        let col = sort_col.get();
+        let dir = sort_dir.get();
+        if dir != 0 && !col.is_empty() {
+            list.sort_by(|a, b| {
+                let ord = match col.as_str() {
+                    "provider" => a.provider.cmp(&b.provider),
+                    "context" => a.context_window.cmp(&b.context_window),
+                    "tested" => a.last_tested.cmp(&b.last_tested),
+                    _ => a.model_id.cmp(&b.model_id),
+                };
+                if dir < 0 { ord.reverse() } else { ord }
+            });
+        }
+        list
+    };
+
+    let cycle = move |col: &'static str| {
+        if sort_col.get() == col {
+            set_sort_dir.set(if sort_dir.get() == 1 { -1 } else if sort_dir.get() == -1 { 0 } else { 1 });
+            if sort_dir.get() == 0 {
+                set_sort_col.set(String::new());
+            }
+        } else {
+            set_sort_col.set(col.to_string());
+            set_sort_dir.set(1);
+        }
+    };
+    let mark = move |col: &'static str| {
+        if sort_col.get() == col {
+            if sort_dir.get() == 1 { " ▲" } else if sort_dir.get() == -1 { " ▼" } else { "" }
+        } else {
+            ""
+        }
+    };
+
+    view! {
+        <Suspense fallback=|| view! { <p>"Loading registry…"</p> }>
+            <div class="ops-row">
+                <p><input placeholder="Search models…" on:input=move |ev| set_query.set(event_target_value(&ev))/></p>
+                <div class="provider-pick">
+                    {move || providers().into_iter().map(|p| {
+                        let name = p.clone();
+                        let checked = picked.get().contains(&p);
+                        view! {
+                            <label>
+                                <input type="checkbox" prop:checked=checked on:change=move |ev| {
+                                    let on = event_target_checked(&ev);
+                                    let mut set = picked.get();
+                                    if on { set.insert(name.clone()); } else { set.remove(&name); }
+                                    set_picked.set(set);
+                                }/>{p}
+                            </label>
+                        }
+                    }).collect::<Vec<_>>()}
+                </div>
+            </div>
+            {move || {
+                let list = shown();
+                view! {
+                    <p>{format!("{} of {} shown", list.len(), rows.get().map(|l| l.len()).unwrap_or(0))}</p>
+                    <table>
+                        <tr>
+                            <th data-sort="1" on:click=move |_| cycle("model")>{move || format!("Model{}", mark("model"))}</th>
+                            <th data-sort="1" on:click=move |_| cycle("provider")>{move || format!("Provider{}", mark("provider"))}</th>
+                            <th data-sort="1" on:click=move |_| cycle("context")>{move || format!("Context{}", mark("context"))}</th>
+                            <th data-sort="1" on:click=move |_| cycle("tested")>{move || format!("Last tested{}", mark("tested"))}</th>
+                        </tr>
+                        {list.into_iter().map(|m| view! {
+                            <tr><td>{m.model_id}</td><td>{m.provider}</td><td>{m.context_window.map(|c| c.to_string()).unwrap_or_default()}</td><td>{m.last_tested.unwrap_or_default()}</td></tr>
+                        }).collect::<Vec<_>>()}
+                    </table>
+                }
+            }}
         </Suspense>
     }
 }
@@ -743,7 +864,7 @@ fn SettingsPage() -> impl IntoView {
                     view! {
                         <ModelsNavbar show_models=named.0 display_name=named.1/>
                         <main class="main">
-                            <section class="hero"><span class="hero-brand">"ExoSystems"</span><h1>"Settings."</h1></section>
+                            <section class="hero"><h1>"Settings."</h1></section>
                             <p>{format!("Signed in as {did}")}</p>
                             <p><button on:click=move |_| {
                                 let t = read_token().unwrap_or_default();
@@ -816,7 +937,7 @@ fn SettingsPage() -> impl IntoView {
                 None => view! {
                     <ModelsNavbar show_models=false display_name=String::new()/>
                     <main class="main">
-                        <section class="hero"><span class="hero-brand">"ExoSystems"</span><h1>"Settings."</h1></section>
+                        <section class="hero"><h1>"Settings."</h1></section>
                         <section class="family">
                             <DisplayControls appearance=appearance set_appearance=set_appearance width=width set_width=set_width apply=apply/>
                         </section>
