@@ -9,9 +9,10 @@ use radix_leptos::Button as RadixButton;
 use leptos_forms_rs::components::*;
 
 use crate::auth::{
-    answer_nonce, clear_token, create_identity, docs_content, gate_check, grant_access,
-    pending_list, read_settings, read_token, request_nonce, revoke_access, save_settings,
-    sign_out, store_token, VisitorSettings,
+    active_did, answer_nonce, clear_token, create_identity, delete_identity, docs_content,
+    drop_session, gate_check, get_flags, grant_access, live_sessions, pending_list, read_settings,
+    read_token, request_nonce, revoke_access, save_settings, set_flags, sign_out, stash_session,
+    switch_session, update_profile, user_avatar, user_display_name, users_list, VisitorSettings,
 };
 use crate::store::{registry_rows, ModelRow};
 
@@ -35,15 +36,31 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
     }
 }
 
-const CARDS: [(&str, &str); 8] = [
-    ("ExoTalk", "The hosting platform for the Exosystem. All apps unfold from within it."),
-    ("ExoSoul", "The authoring system. Directives authored here drive every app's UI."),
-    ("Conscia", "Node connectivity and governance surface — discovery, capabilities, and petitions."),
-    ("Exonomy", "P2P economy with voucher-based exchange. Communities create and trade value independently of traditional banks."),
-    ("Exocracy", "Community project management. Exocrats collaborate on large-scale initiatives using Exonomy vouchers."),
-    ("RepubLet", "Cold storage for the Exosystem — secure, decentralized data persistence."),
-    ("ThreeSteps (3S)", "Decentralized, privacy-first social media for Catholics. P2P, local-first, offline-capable — supporting faith formation through Baptism, First Communion, and Confirmation."),
-    ("InterNovel", "Collaborative writing platform for young creators. DID-based identity ensures clear attribution and IP ownership. Features Character Travel Trunk, Novel Spine, Casting Studio, and Novel Café."),
+const CARDS: [(&str, &str, &str, &str); 8] = [
+    ("ExoTalk", "/assets/cards/exotalk.png",
+     "The hosting platform for the Exosystem. All apps unfold from within it.",
+     "The Exosystem's flagship app: private, encrypted messaging that runs natively on your phone and desktop. It is your personal node on the network, carrying your identity and keeping every conversation peer to peer — connecting directly when possible and passing through blind relays only when it must. Every other Exosystem app unfolds inside it, arriving as subscriptions you manage in your settings, and it can even create and manage Conscia service nodes on your behalf. Because apps update through signed blueprints delivered over the mesh, the interface of everything you subscribe to evolves the moment its author publishes. Sign-ins, subscriptions, and app updates all flow through it, making one app the solid front door to the whole family."),
+    ("ExoSoul", "/assets/cards/exosoul.png",
+     "The authoring system. Directives authored here drive every app's UI.",
+     "The studio where every Exosystem app is authored — the press where each app is formed into a signed blueprint. One identity authors here; ExoTalk users subscribe, and the app unfolds on their devices with its interface driven by the blueprint, so a published change reaches every subscriber instantly. Every blueprint is a canonical app payload whose exact bytes are pinned by a digest, so what unfolds on a device is always precisely what was signed. Blueprints compose other blueprints only through digest-pinned includes with parent-owned overrides, keeping every app's lineage exact and verifiable. ExoSoul itself is a native app, and Conscia nodes host and relay its blueprints as a service."),
+    ("Conscia", "/assets/cards/conscia.png",
+     "Node connectivity and governance surface — discovery, capabilities, and petitions.",
+     "The lifeline of the Exosystem: always-on nodes that relay messages, discover peers, answer petitions, and keep data reachable while your devices are offline — opt-in helper services. Every node app runs peer to peer independently; when one is present it can carry relay, indexing, discovery, persistence, authentication, observability, and federation, routing geographically and by latency. Its relationship worker handles petitions, federation, and indexing while its operator console administers each node, in small, community, and large clustered flavors — with a large node planned at exosystems.net itself — and a Conscierge worker coordinates the nodes with one another and reaches beyond the mesh. Blind indexing can also surface community circles and public directories through one unified search surface."),
+    ("Exonomy", "/assets/cards/exonomy.png",
+     "P2P economy with voucher-based exchange. Communities create and trade value independently of traditional banks.",
+     "Social voucher exchange. Members — Exonomists — mint and trade vouchers that stand for real goods and services, optionally bought or sold for everyday money; the voucher itself carries the value. It arrives as an app inside ExoTalk, and while its vouchers can optionally fund Exocracy tasks, it operates entirely independently by default — a fully realized ecosystem of structured value exchange. Native apps carry it onto phones and desktops for managing heavy voucher ledgers, and an indexing node hosts encrypted voucher payloads blindly, surfacing only the metadata its owners choose to publish."),
+    ("Exocracy", "/assets/cards/exocracy.png",
+     "Community project management. Exocrats collaborate on large-scale initiatives using Exonomy vouchers.",
+     "Transparent project governance — the governance layer of the mesh. Communities run projects with open proposals, votes, and milestones, funded with ordinary money or, optionally, Exonomy vouchers; that funding choice is engineered interoperability, and a project runs entirely on ordinary money when its manager prefers. Built for high-trust environments where organizational transparency and independent project management matter most, it connects with ExoTalk, Exonomy, and the rest of the family while standing entirely on its own. Native apps put real-time voting and task tracking in your pocket, and an indexing node keeps open tasks and bounties publicly searchable."),
+    ("RepubLet", "/assets/cards/republet.png",
+     "Cold storage for the Exosystem — secure, decentralized data persistence.",
+     "Decentralized scientific publishing and peer review — a modern Republic of Letters, the knowledge ledger of the mesh. Researchers' work lives on permanent, hash-anchored records with cryptographically verifiable authorship, and author-facing paywalls offer a decentralized alternative to subscription platforms for earning from one's own findings — settled in ordinary money, cryptocurrency, or, optionally, Exonomy vouchers. A scientist who initiates an Exocracy project to manage and fund research is stringing together independent modular tools. Native apps carry reading and peer-review notifications onto phones and desktops, and a citation relay keeps open-science metadata publicly searchable."),
+    ("ThreeSteps (3S)", "/assets/cards/threesteps.png",
+     "Decentralized, privacy-first social media for Catholics. P2P, local-first, offline-capable — supporting faith formation through Baptism, First Communion, and Confirmation.",
+     "A private, offline-first social app for Catholic families and communities — helping children grow in faith through Baptism, First Communion, and Confirmation. Here social means relationships, guidance, and formation, and privacy means total discretion for those practicing in regions where faith requires it. Conversations connect directly when possible and pass through blind relays when they must, with local-first storage and cryptographic access control — so it keeps working through limited connectivity. Identity flows through ExoAuth, the family's shared identity layer, and missionaries, catechists, and parish groups meet the wider Exosystem through Conscia nodes."),
+    ("InterNovel", "/assets/cards/internovel.png",
+     "Collaborative writing platform for young creators. DID-based identity ensures clear attribution and IP ownership. Features Character Travel Trunk, Novel Spine, Casting Studio, and Novel Café.",
+     "Collaborative storytelling for young authors. Each writer's contributions are digitally signed — every paragraph permanently linked to the identity that wrote it — so authorship stays verifiable and intellectual property stays with its creator. Characters can travel between stories through the Travel Trunk, the Novel Spine holds each story's structure, and novels are written together under unanimous consent. Flexible collaboration, clear attribution, and protected ownership make it a writing home that grows with its authors, and each novel unfolds inside ExoTalk as one of the family's apps."),
 ];
 
 #[component]
@@ -68,77 +85,211 @@ pub fn App() -> impl IntoView {
     }
 }
 
-/// Home keeps the carousel with the gadgetry overlaid on top of it.
-#[component]
-fn HomePage() -> impl IntoView {
-    let gate = Resource::new(
+/// Identity snapshot for the floating gadgetry.
+#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
+struct IdentityState {
+    signed_in: bool,
+    did: String,
+    display_name: String,
+    avatar: String,
+    model_updates: bool,
+    admin: bool,
+}
+
+fn load_identity() -> Resource<Option<IdentityState>> {
+    Resource::new(
         || (),
         |_| async move {
-            match read_token() {
-                Some(t) => gate_check(t).await.unwrap_or(None),
-                None => None,
-            }
+            let token = read_token()?;
+            let gate = gate_check(token).await.ok()??;
+            let avatar = user_avatar(gate.did.clone()).await.unwrap_or_default();
+            let display_name = user_display_name(gate.did.clone()).await.unwrap_or_default();
+            Some(IdentityState {
+                signed_in: true,
+                did: gate.did.clone(),
+                display_name,
+                avatar,
+                model_updates: gate.model_updates,
+                admin: gate.admin,
+            })
         },
-    );
+    )
+}
+
+/// Floating gadgetry over the carousel. No navigation bar element: the
+/// logo, the menu, and every gadget float transparently over the slides.
+#[component]
+fn FloatingGadgets(identity: Resource<Option<IdentityState>>) -> impl IntoView {
+    let users = Resource::new(|| (), |_| async move { users_list().await.unwrap_or_default() });
+    let (chip_open, set_chip_open) = signal(false);
+    let (appearance, set_appearance) = signal("system".to_string());
+    let (width, set_width) = signal("normal".to_string());
+    try_load_browser_settings(&set_appearance, &set_width);
+    let apply_display = move || {
+        apply_browser_settings(&appearance.get(), &width.get());
+        if let Some(t) = read_token() {
+            let s = VisitorSettings { appearance: appearance.get(), width: width.get() };
+            leptos::task::spawn_local(async move {
+                let _ = save_settings(t, s).await;
+            });
+        }
+    };
+
     view! {
-        <Suspense fallback=|| view! { <nav class="navbar"><span class="navbar-brand">"ExoSystems"</span></nav> }>
-            {move || gate.get().map(|g| {
-                let show = g.map(|v| v.model_updates).unwrap_or(false);
-                view! {
-                    <header class="masthead">
-                        <div class="slide slide-1"></div>
-                        <div class="slide slide-2"></div>
-                        <nav class="navbar">
-                            <img src="/exosys.png" alt="ExoSystems" class="navbar-logo"/>
-                            <div class="navbar-menu">
-                                <A href="/">"Home"</A>
-                                {show.then(|| view! { <A href="/models">"Models"</A> })}
-                                <A href="/settings">"Settings"</A>
-                                <A href="/signin">"Sign in"</A>
-                            </div>
-                        </nav>
-                        <section class="hero">
-                            <span class="hero-brand">"ExoSystems"</span>
-                            <div class="tagline-block">
-                                <p>"Hello, world."</p>
-                                <p>"Private by design. Connected by nature."</p>
-                            </div>
-                        </section>
-                    </header>
-                    <main class="main">
-                        <section class="family">
-                            {CARDS
-                                .iter()
-                                .map(|(title, body)| {
+        <div class="navbar">
+            <div class="brandrow">
+            <img src="/exosys.png" alt="ExoSystems" class="navbar-logo"/>
+            <div class="navbar-menu">
+                <A href="/">"Home"</A>
+                {move || identity.get().flatten().filter(|id| id.model_updates).map(|_| view! { <A href="/models">"Models"</A> })}
+                <A href="/settings">"Settings"</A>
+                {move || match identity.get().flatten() {
+                    Some(id) => view! {
+                        <span class="identity-chip" on:click=move |_| set_chip_open.set(!chip_open.get())>
+                            {if id.avatar.is_empty() { view! { <span class="avatar-fallback">{id.display_name.chars().take(1).collect::<String>()}</span> }.into_any() } else { view! { <img class="avatar" src=id.avatar.clone() alt="profile"/> }.into_any() }}
+                            <span class="chip-name">{if id.display_name.is_empty() { id.did.clone() } else { id.display_name.clone() }}</span>
+                        </span>
+                        {chip_open.get().then(|| view! {
+                            <span class="chip-dropdown">
+                                <A href="/settings">"Profile gear"</A>
+                                {move || users.get().map(|list| list.into_iter().map(|u| {
+                                    let (did, name) = (u.did.clone(), u.display_name.clone());
                                     view! {
-                                        <div class="family-card">
-                                            <h3>{*title}</h3>
-                                            <p>{*body}</p>
-                                        </div>
+                                        <span class="chip-user" on:click=move |_| {
+                                            if switch_session(&did) { set_chip_open.set(false); }
+                                        }>{name}</span>
                                     }
-                                })
-                                .collect::<Vec<_>>()}
-                        </section>
-                    </main>
-                }
-            })}
-        </Suspense>
+                                }).collect::<Vec<_>>())}
+                                <A href="/signin">"Add identity"</A>
+                            </span>
+                        })}
+                        <span class="gadget-row">
+                            <select
+                                prop:value=move || appearance.get()
+                                on:change=move |ev| { set_appearance.set(event_target_value(&ev)); apply_display.clone()(); }
+                            >
+                                <option value="system">"System"</option>
+                                <option value="light">"Light"</option>
+                                <option value="dark">"Dark"</option>
+                            </select>
+                            <select
+                                prop:value=move || width.get()
+                                on:change=move |ev| { set_width.set(event_target_value(&ev)); apply_display.clone()(); }
+                            >
+                                <option value="normal">"Normal"</option>
+                                <option value="wide">"Wide"</option>
+                            </select>
+                        </span>
+                    }.into_any(),
+                    None => view! { <A href="/signin">"Sign in"</A> }.into_any(),
+                }}
+            </div>
+            </div>
+        </div>
     }
 }
 
-/// The models page renders its own top navigation bar carrying the gadgetry
-/// with no carousel. Sign-in runs only on the main page; this route
-/// recognizes the main-page session instead of running its own sign-in.
+/// Home keeps the carousel with the gadgetry overlaid on top of it.
 #[component]
-fn ModelsNavbar(show_models: bool) -> impl IntoView {
+fn HomePage() -> impl IntoView {
+    let identity = load_identity();
     view! {
-        <nav class="navbar">
-            <span class="navbar-brand">"Model Updates"</span>
+        <header class="masthead">
+            <div class="slide slide-1"></div>
+            <div class="slide slide-2"></div>
+            <FloatingGadgets identity=identity/>
+            <section class="hero">
+                <div class="tagline-block">
+                    <p><span class="t1">"Hello, World! We're building something new."</span> <span class="t2">"Private by design. Connected by nature."</span><span class="t-sub">"... for the software was made for the man, not the man for the software!"</span></p>
+                </div>
+            </section>
+        </header>
+        <main class="main">
+            <section class="family">
+                {CARDS.iter().map(|(title, art, teaser, full)| view! { <FlipCard title=*title art=*art teaser=*teaser full=*full/> }).collect::<Vec<_>>()}
+            </section>
+        </main>
+    }
+}
+
+/// Reference flip card: art front with title, full text back with scroll
+/// controls. Clicking the card flips it.
+#[component]
+fn FlipCard(title: &'static str, art: &'static str, teaser: &'static str, full: &'static str) -> impl IntoView {
+    let (flipped, set_flipped) = signal(false);
+    let full_ref: NodeRef<leptos::html::Div> = NodeRef::new();
+    let (show_top, set_show_top) = signal(false);
+    let (show_bottom, set_show_bottom) = signal(false);
+    let (fade_top, set_fade_top) = signal(false);
+    let (fade_bottom, set_fade_bottom) = signal(false);
+
+    let on_scroll = move |_| {
+        if let Some(el) = full_ref.get() {
+            let top = el.scroll_top();
+            let height = el.client_height();
+            let total = el.scroll_height();
+            let scrollable = total > height + 8;
+            set_show_top.set(top > 8);
+            set_fade_top.set(scrollable && top > 8);
+            set_fade_bottom.set(scrollable && top + height < total - 8);
+            set_show_bottom.set(scrollable && top + height < total - 8);
+        }
+    };
+    let scroll_to_top = move |ev: leptos::ev::MouseEvent| {
+        ev.stop_propagation();
+        if let Some(el) = full_ref.get() {
+            el.set_scroll_top(0);
+        }
+    };
+    let scroll_to_bottom = move |ev: leptos::ev::MouseEvent| {
+        ev.stop_propagation();
+        if let Some(el) = full_ref.get() {
+            el.set_scroll_top(el.scroll_height());
+        }
+    };
+
+    view! {
+        <div class="flip" on:click=move |_| set_flipped.set(!flipped.get())>
+            <div class="flip-box" class:flipped=move || flipped.get()>
+                <div class="face front">
+                    <div class="art">
+                        <img src=art alt=title/>
+                    </div>
+                    <p class="teaser">{teaser}</p>
+                    <h3>{title}</h3>
+                </div>
+                <div class="face back">
+                    <div class="full" node_ref=full_ref on:scroll=on_scroll
+                        class:ftop=move || fade_top.get()
+                        class:fbot=move || fade_bottom.get()>
+                        <p>{full}</p>
+                    </div>
+                    <h3 class="backlabel">{title}</h3>
+                    <button type="button" class="tobot" class:show=move || show_bottom.get() on:click=scroll_to_bottom aria-label="Jump to bottom">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                    </button>
+                    <button type="button" class="totop" class:show=move || show_top.get() on:click=scroll_to_top aria-label="Back to top">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+/// The models page carries its own solid top navigation bar with the
+/// gadgetry and no carousel. Sign-in runs only on the main page; this
+/// route recognizes the main-page session instead of running its own.
+#[component]
+fn ModelsNavbar(show_models: bool, display_name: String) -> impl IntoView {
+    view! {
+        <nav class="navbar navbar-solid">
+            <span class="navbar-brand">"ExoSystems"</span>
             <div class="navbar-menu">
                 <A href="/">"Home"</A>
                 {show_models.then(|| view! { <A href="/models">"Models"</A> })}
                 <A href="/settings">"Settings"</A>
-                <A href="/signin">"Sign in"</A>
+                {if display_name.is_empty() { view! { <A href="/signin">"Sign in"</A> }.into_any() } else { view! { <span class="chip-name">{display_name}</span> }.into_any() }}
             </div>
         </nav>
     }
@@ -160,10 +311,15 @@ fn sign_challenge(_secret_b58: &str, _nonce: &str) -> Result<String, String> {
     Err("Signing runs in the browser.".to_string())
 }
 
+/// ExoSystems.net sign-in. The visitor stays on ExoSystems.net throughout:
+/// after signing in the home page shows the authenticated view.
 #[component]
 fn SigninPage() -> impl IntoView {
+    let users = Resource::new(|| (), |_| async move { users_list().await.unwrap_or_default() });
+    let flags = Resource::new(|| (), |_| async move { get_flags().await.unwrap_or_default() });
     let (did_input, set_did_input) = signal(String::new());
     let (secret_input, set_secret_input) = signal(String::new());
+    let (name_input, set_name_input) = signal(String::new());
     let (notice, set_notice) = signal(String::new());
     let (answered, set_answered) = signal(String::new());
     let navigate = use_navigate();
@@ -171,7 +327,10 @@ fn SigninPage() -> impl IntoView {
         let did = did.clone();
         async move { request_nonce(did).await }
     });
-    let create_action = Action::new(|_: &()| async move { create_identity().await });
+    let create_action = Action::new(|input: &(String, String)| {
+        let (name, avatar) = input.clone();
+        async move { create_identity(name, avatar).await }
+    });
 
     Effect::new_sync(move |_| {
         if let Some(Ok(nonce)) = nonce_action.value().get() {
@@ -185,10 +344,10 @@ fn SigninPage() -> impl IntoView {
             match sign_challenge(&secret_input.get(), &nonce) {
                 Ok(sig) => {
                     leptos::task::spawn_local(async move {
-                        match answer_nonce(did, nonce_send, sig).await {
+                        match answer_nonce(did.clone(), nonce_send, sig).await {
                             Ok(token) => {
-                                store_token(&token);
-                                nav("/docs", Default::default());
+                                stash_session(&did, &token);
+                                nav("/", Default::default());
                             }
                             Err(e) => set_notice.set(format!("Not signed in: {e}")),
                         }
@@ -198,39 +357,54 @@ fn SigninPage() -> impl IntoView {
             }
         }
         if let Some(Ok(fresh)) = create_action.value().get() {
-            store_token(&fresh.token);
+            stash_session(&fresh.did, &fresh.token);
             set_notice.set(format!("New identity {} signed in. The owner grants powers on the settings page.", fresh.did));
         }
     });
 
     view! {
-        <ModelsNavbar show_models=false/>
+        <ModelsNavbar show_models=false display_name=String::new()/>
         <main class="main">
             <section class="hero">
+                <span class="hero-brand">"ExoSystems"</span>
                 <h1>"Sign in."</h1>
-                <p class="hero-tagline">"Present the identity and sign the challenge with its secret."</p>
+                <p class="hero-tagline">"Your identity lives with you. Sign in with your peer identity and stay on ExoSystems.net."</p>
             </section>
             <section class="family">
                 <div class="family-card">
-                    <h3>"Peer identity"</h3>
-                    <Input
+                    <h3>"Known identities"</h3>
+                    <p>"Identities the local Willow store knows. Pick one, prove its secret, and continue."</p>
+                    {move || users.get().map(|list| list.into_iter().map(|u| {
+                        let did = u.did.clone();
+                        view! {
+                            <p><button on:click=move |_| { set_notice.set(String::new()); set_did_input.set(did.clone()); nonce_action.dispatch(did.clone()); }>{u.display_name}</button></p>
+                        }
+                    }).collect::<Vec<_>>())}
+                    <p><Input
                         name="did".to_string()
                         placeholder="did:peer:…".to_string()
                         on_change=Callback::new(move |v: String| set_did_input.set(v))
-                    />
+                    /></p>
                     <p><input type="password" placeholder="secret" on:input=move |ev| set_secret_input.set(event_target_value(&ev))/></p>
                     <p><RadixButton on_click=Callback::new(move |_| {
                         set_notice.set(String::new());
                         nonce_action.dispatch(did_input.get());
-                    })>"Sign in"</RadixButton></p>
+                    })>"Continue"</RadixButton></p>
                     <p>{move || notice.get()}</p>
                 </div>
                 <div class="family-card">
                     <h3>"No identity yet"</h3>
-                    <p>"Generate a peer identity here, then it signs in with fresh powers pending."</p>
-                    <p><RadixButton on_click=Callback::new(move |_| {
-                        create_action.dispatch(());
-                    })>"Generate identity"</RadixButton></p>
+                    {move || flags.get().map(|f| if f.disable_new_users {
+                        view! { <p>"Adding identities is paused by the owner."</p> }.into_any()
+                    } else {
+                        view! {
+                            <p>"Generate a peer identity here with its display name, then it signs in."</p>
+                            <p><input placeholder="Display name" on:input=move |ev| set_name_input.set(event_target_value(&ev))/></p>
+                            <p><RadixButton on_click=Callback::new(move |_| {
+                                create_action.dispatch((name_input.get(), String::new()));
+                            })>"Generate identity"</RadixButton></p>
+                        }.into_any()
+                    })}
                 </div>
             </section>
         </main>
@@ -258,12 +432,13 @@ fn DocsPage() -> impl IntoView {
             }
         },
     );
-    let logout = Action::new(|token: &String| {
-        let token = token.clone();
-        async move { sign_out(token).await }
+    let logout = Action::new(|input: &(String, String)| {
+        let (token, did) = input.clone();
+        async move { sign_out(token).await.map(|_| did) }
     });
     Effect::new_sync(move |_| {
-        if logout.value().get().is_some_and(|r| r.is_ok()) {
+        if let Some(Ok(did)) = logout.value().get() {
+            drop_session(&did);
             clear_token();
             gate.refetch();
         }
@@ -272,11 +447,12 @@ fn DocsPage() -> impl IntoView {
     view! {
         <Suspense fallback=|| view! { <p>"Checking identity…"</p> }>
             {move || {
-                let show = models_gate.get().flatten().map(|v| v.model_updates).unwrap_or(false);
+                let named = models_gate.get().flatten().map(|v| (v.model_updates, v.did)).unwrap_or((false, String::new()));
                 view! {
-                    <ModelsNavbar show_models=show/>
+                    <ModelsNavbar show_models=named.0 display_name=named.1/>
                     <main class="main">
                         <section class="hero">
+                            <span class="hero-brand">"ExoSystems"</span>
                             <h1>"Docs."</h1>
                         </section>
                         <section class="family">
@@ -290,7 +466,9 @@ fn DocsPage() -> impl IntoView {
                                                     <h3>"Gated docs"</h3>
                                                     <p>{format!("Signed in as {}. This page is visible only to approved identities.", view.did)}</p>
                                                     <p><RadixButton on_click=Callback::new(move |_| {
-                                                        logout.dispatch(read_token().unwrap_or_default());
+                                                        let t = read_token().unwrap_or_default();
+                                                        let d = active_did().unwrap_or_default();
+                                                        logout.dispatch((t, d));
                                                     })>"Sign out"</RadixButton></p>
                                                 </div>
                                             }.into_any()
@@ -342,27 +520,30 @@ fn ModelsPage() -> impl IntoView {
     view! {
         <Suspense fallback=|| view! { <p>"Checking identity…"</p> }>
             {move || gate.get().map(|g| match g {
-                Some(v) if v.model_updates => view! {
-                    <ModelsNavbar show_models=true/>
-                    <main class="main">
-                        <section class="runs"><h2>"Runs"</h2></section>
-                        <section class="models">
-                            <h2>"Models"</h2>
-                            <Suspense fallback=|| view! { <p>"Loading registry…"</p> }>
-                                {move || rows.get().map(|list: Vec<ModelRow>| view! {
-                                    <table>
-                                        <tr><th>"Model"</th><th>"Provider"</th><th>"Context"</th><th>"Last tested"</th></tr>
-                                        {list.into_iter().map(|m| view! {
-                                            <tr><td>{m.model_id}</td><td>{m.provider}</td><td>{m.context_window.map(|c| c.to_string()).unwrap_or_default()}</td><td>{m.last_tested.unwrap_or_default()}</td></tr>
-                                        }).collect::<Vec<_>>()}
-                                    </table>
-                                })}
-                            </Suspense>
-                        </section>
-                    </main>
-                }.into_any(),
+                Some(v) if v.model_updates => {
+                    let name = v.did.clone();
+                    view! {
+                        <ModelsNavbar show_models=true display_name=name/>
+                        <main class="main">
+                            <section class="runs"><h2>"Runs"</h2></section>
+                            <section class="models">
+                                <h2>"Models"</h2>
+                                <Suspense fallback=|| view! { <p>"Loading registry…"</p> }>
+                                    {move || rows.get().map(|list: Vec<ModelRow>| view! {
+                                        <table>
+                                            <tr><th>"Model"</th><th>"Provider"</th><th>"Context"</th><th>"Last tested"</th></tr>
+                                            {list.into_iter().map(|m| view! {
+                                                <tr><td>{m.model_id}</td><td>{m.provider}</td><td>{m.context_window.map(|c| c.to_string()).unwrap_or_default()}</td><td>{m.last_tested.unwrap_or_default()}</td></tr>
+                                            }).collect::<Vec<_>>()}
+                                        </table>
+                                    })}
+                                </Suspense>
+                            </section>
+                        </main>
+                    }.into_any()
+                }
                 _ => view! {
-                    <ModelsNavbar show_models=false/>
+                    <ModelsNavbar show_models=false display_name=String::new()/>
                     <main class="main"><p><A href="/signin">"Sign in with a delegated identity to read the registry."</A></p></main>
                 }.into_any(),
             })}
@@ -456,6 +637,7 @@ fn SettingsPage() -> impl IntoView {
     let (appearance, set_appearance) = signal("system".to_string());
     let (width, set_width) = signal("normal".to_string());
     let (note, set_note) = signal(String::new());
+    let (name_edit, set_name_edit) = signal(String::new());
 
     try_load_browser_settings(&set_appearance, &set_width);
 
@@ -500,6 +682,7 @@ fn SettingsPage() -> impl IntoView {
             }
         },
     );
+    let flags = Resource::new(|| (), |_| async move { get_flags().await.unwrap_or_default() });
     let (grant_did, set_grant_did) = signal(String::new());
     let (grant_level, set_grant_level) = signal("read".to_string());
     let grant_action = Action::new(|input: &(String, String, String)| {
@@ -510,29 +693,44 @@ fn SettingsPage() -> impl IntoView {
         let (token, did) = input.clone();
         async move { revoke_access(token, did).await }
     });
-    Effect::new_sync(move |_| {
-        if let Some(r) = grant_action.value().get() {
-            match r {
-                Ok(()) => {
-                    set_note.set("Granted.".to_string());
-                    pending.refetch();
-                }
-                Err(e) => set_note.set(format!("{e}")),
-            }
+    let profile_action = Action::new(|input: &(String, String, String)| {
+        let (token, name, avatar) = input.clone();
+        async move { update_profile(token, name, avatar).await }
+    });
+    let remove_action = Action::new(|input: &(String, String)| {
+        let (token, did) = input.clone();
+        async move { delete_identity(token, did).await }
+    });
+    let flag_action = Action::new(|input: &(String, bool)| {
+        let (token, off) = input.clone();
+        async move {
+            use crate::auth::SiteFlags;
+            set_flags(token, SiteFlags { disable_new_users: off }).await
         }
-        if let Some(r) = revoke_action.value().get() {
+    });
+    Effect::new_sync(move |_| {
+        for r in [grant_action.value().get(), revoke_action.value().get(), profile_action.value().get(), remove_action.value().get(), flag_action.value().get()].into_iter().flatten() {
             match r {
                 Ok(()) => {
-                    set_note.set("Revoked.".to_string());
+                    set_note.set("Saved.".to_string());
                     pending.refetch();
+                    flags.refetch();
+                    gate.refetch();
                 }
                 Err(e) => set_note.set(format!("{e}")),
             }
         }
     });
-    let logout = Action::new(|token: &String| {
-        let token = token.clone();
-        async move { sign_out(token).await }
+    let logout = Action::new(|input: &(String, String)| {
+        let (token, did) = input.clone();
+        async move { sign_out(token).await.map(|_| did) }
+    });
+    Effect::new_sync(move |_| {
+        if let Some(Ok(did)) = logout.value().get() {
+            drop_session(&did);
+            clear_token();
+            gate.refetch();
+        }
     });
 
     view! {
@@ -541,23 +739,53 @@ fn SettingsPage() -> impl IntoView {
                 Some(v) => {
                     let admin = v.admin;
                     let did = v.did.clone();
+                    let named = (v.model_updates, v.did.clone());
                     view! {
-                        <ModelsNavbar show_models=v.model_updates/>
+                        <ModelsNavbar show_models=named.0 display_name=named.1/>
                         <main class="main">
-                            <section class="hero"><h1>"Settings."</h1></section>
+                            <section class="hero"><span class="hero-brand">"ExoSystems"</span><h1>"Settings."</h1></section>
                             <p>{format!("Signed in as {did}")}</p>
                             <p><button on:click=move |_| {
-                                if let Some(t) = read_token() { logout.dispatch(t); }
-                                clear_token();
-                                gate.refetch();
+                                let t = read_token().unwrap_or_default();
+                                let d = active_did().unwrap_or_default();
+                                logout.dispatch((t, d));
                             }>"Sign out"</button></p>
                             <section class="family">
                                 <DisplayControls appearance=appearance set_appearance=set_appearance width=width set_width=set_width apply=apply/>
+                                <div class="family-card">
+                                    <h3>"Profile"</h3>
+                                    <p>"Display name and avatar travel with this identity."</p>
+                                    <p><input placeholder="Display name" on:input=move |ev| set_name_edit.set(event_target_value(&ev))/></p>
+                                    <p><button on:click=move |_| {
+                                        if let Some(t) = read_token() { profile_action.dispatch((t, name_edit.get(), String::new())); }
+                                    }>"Save profile"</button></p>
+                                    <p>{move || live_sessions().iter().map(|(d, _)| view! {
+                                        <span>{d.clone()} <button on:click={
+                                            let dd = d.clone();
+                                            move |_| {
+                                                if let Some(t) = read_token() { remove_action.dispatch((t, dd.clone())); }
+                                            }
+                                        }>"Remove"</button></span>
+                                    }).collect::<Vec<_>>()}</p>
+                                </div>
                             </section>
+                            {move || flags.get().map(|f| view! {
+                                <section class="family">
+                                    <div class="family-card">
+                                        <h3>"Mesh access"</h3>
+                                        <p>{if f.disable_new_users { "Adding identities is paused." } else { "Adding identities is open." }}</p>
+                                    </div>
+                                </section>
+                            })}
                             {admin.then(|| view! {
                                 <section class="family">
                                     <div class="family-card">
                                         <h3>"Owner tools"</h3>
+                                        {move || flags.get().map(|f| view! {
+                                            <p><button on:click=move |_| {
+                                                if let Some(t) = read_token() { flag_action.dispatch((t, !f.disable_new_users)); }
+                                            }>{if f.disable_new_users { "Reopen adding identities" } else { "Pause adding identities" }}</button></p>
+                                        })}
                                         <p><input placeholder="did:peer:…" on:input=move |ev| set_grant_did.set(event_target_value(&ev))/></p>
                                         <p><select on:change=move |ev| set_grant_level.set(event_target_value(&ev))>
                                             <option value="read">"read"</option>
@@ -586,9 +814,9 @@ fn SettingsPage() -> impl IntoView {
                     }.into_any()
                 }
                 None => view! {
-                    <ModelsNavbar show_models=false/>
+                    <ModelsNavbar show_models=false display_name=String::new()/>
                     <main class="main">
-                        <section class="hero"><h1>"Settings."</h1></section>
+                        <section class="hero"><span class="hero-brand">"ExoSystems"</span><h1>"Settings."</h1></section>
                         <section class="family">
                             <DisplayControls appearance=appearance set_appearance=set_appearance width=width set_width=set_width apply=apply/>
                         </section>

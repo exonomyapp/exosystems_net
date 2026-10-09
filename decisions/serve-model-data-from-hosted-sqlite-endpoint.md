@@ -69,4 +69,4 @@ Option 1: boltstore runs on exosystems.net holding the model-updates database, a
 5. Host the built site on exosystems.net beside boltstore and confirm the local system reads results from the hosted address.
 6. Retire the Python round scripts, the snapshot exporter, the report generator, and the Pages deployment workflow once the hosted site serves round data.
 7. Run one full round against the hosted database and confirm registry counts, history rows, and dashboard display.
-8. Retire the `site-delegations.json` working copy when the Conscia node runs on the host with the capabilities namespace in its Willow store, as exosystems.net moves toward its ExoMetro flavor.
+8. Delegations persist through the capability layer's own file at `exostorage/capabilities.json`, read by the website gate and by the node code alike. No second working copy exists. Landed 2026-10-09: the `site-delegations.json` copy is removed and the gate reads the in-process capability store directly.

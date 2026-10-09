@@ -552,3 +552,81 @@ th { background: var(--surface); }
 /* Slide images served from the main host. */
 .slide-1 { background-image: url('https://exosystems.net/assets/hero/slide-1.jpg'); }
 .slide-2 { background-image: url('https://exosystems.net/assets/hero/slide-2.jpg'); }
+
+/* Solid top bar for the signed-in section pages (models, settings, docs,
+ * sign-in). The home page carries no bar: its gadgetry floats over the
+ * carousel instead. */
+.navbar-solid {
+    background: var(--nav-bg);
+    grid-row: auto;
+    grid-column: auto;
+    padding: 0 2.5rem;
+    min-height: 88px;
+    height: auto;
+}
+.navbar-solid .navbar-brand {
+    color: #f8fafc;
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+.navbar-solid .navbar-menu {
+    background: none;
+    padding: 0.75rem 0;
+}
+
+/* Identity chip with display name, avatar, and switching dropdown. */
+.identity-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-sm);
+}
+.identity-chip:hover { background: rgba(255, 255, 255, 0.05); }
+.avatar {
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.avatar-fallback {
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 700;
+}
+.chip-name {
+    color: #f8fafc;
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+.chip-dropdown {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+.chip-user {
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    text-align: right;
+}
+.chip-user:hover { color: #f8fafc; }
+.gadget-row {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+.teaser {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin: 0;
+}

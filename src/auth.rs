@@ -174,19 +174,35 @@ pub async fn answer_nonce(did: String, nonce: String, signature_b58: String) -> 
     let token = new_token();
     match SESSIONS.lock() {
         Ok(mut s) => {
-            s.insert(token.clone(), did);
+            s.insert(token.clone(), did.clone());
         }
         Err(_) => return Err(ServerFnError::ServerError("sessions locked".into())),
     }
+    ensure_profile(&did);
     Ok(token)
 }
 
 /// Generate a peer identity on the spot and continue signed in with it.
 /// The new identity holds no delegations: the owner grants them.
+/// The display name and avatar arrive with the creation flow and persist
+/// in the Willow user list below.
 #[server]
-pub async fn create_identity() -> Result<NewIdentity, ServerFnError> {
+pub async fn create_identity(display_name: String, avatar: String) -> Result<NewIdentity, ServerFnError> {
     use ed25519_dalek::SigningKey;
     use rand::rngs::OsRng;
+
+    let display_name = display_name.trim().to_string();
+    if display_name.is_empty() {
+        return Err(ServerFnError::ServerError("Give the identity a display name.".into()));
+    }
+    if avatar.len() > 262144 {
+        return Err(ServerFnError::ServerError("That avatar image is too large.".into()));
+    }
+    if users_empty() && site_flags().disable_new_users {
+        // First identity bootstraps the mesh even while creation is paused.
+    } else if site_flags().disable_new_users && !users_empty() {
+        return Err(ServerFnError::ServerError("Adding identities is paused by the owner.".into()));
+    }
 
     let signing_key = SigningKey::generate(&mut OsRng);
     let public_key = signing_key.verifying_key();
@@ -203,6 +219,7 @@ pub async fn create_identity() -> Result<NewIdentity, ServerFnError> {
     if let Ok(mut p) = PENDING.lock() {
         p.insert(did.clone());
     }
+    upsert_profile(&did, display_name, avatar);
     Ok(NewIdentity { did, secret, token })
 }
 
@@ -254,9 +271,13 @@ pub fn clear_token() {
 #[cfg(not(target_arch = "wasm32"))]
 pub fn clear_token() {}
 
+/// Everything below runs server-side against the capability store.
+/// Delegations live in the in-process capability store managed by the
+/// Willow networking code linked into this server binary. The store
+/// persists through its own file below, which the node code reads back.
 #[cfg(feature = "ssr")]
-fn snapshot_path() -> std::path::PathBuf {
-    std::path::Path::new("exostorage").join("site-delegations.json")
+fn capabilities_path() -> std::path::PathBuf {
+    std::path::Path::new("exostorage").join("capabilities.json")
 }
 
 #[cfg(feature = "ssr")]
@@ -265,14 +286,14 @@ async fn persist_delegations() {
     let store = CAPABILITY_STORE.read().await;
     let _ = std::fs::create_dir_all("exostorage");
     if let Ok(json) = serde_json::to_string(&*store) {
-        let _ = std::fs::write(snapshot_path(), json);
+        let _ = std::fs::write(capabilities_path(), json);
     }
 }
 
 #[cfg(feature = "ssr")]
 async fn restore_delegations() {
     use exocore::network_internal::CAPABILITY_STORE;
-    if let Ok(json) = std::fs::read_to_string(snapshot_path()) {
+    if let Ok(json) = std::fs::read_to_string(capabilities_path()) {
         if let Ok(data) = serde_json::from_str(&json) {
             let mut store = CAPABILITY_STORE.write().await;
             *store = data;
@@ -462,4 +483,336 @@ pub async fn save_settings(token: String, settings: VisitorSettings) -> Result<(
         },
         Err(_) => Err(ServerFnError::ServerError("Settings did not encode.".into())),
     }
+}
+
+/// Willow userland: the source of truth for who can sign in.
+///
+/// ExoAuth itself only proves secret ownership for a presented identity.
+/// Delegations are not part of that flow; they live per user in settings
+/// dataland. The user list below is the Willow user namespace carried by
+/// this site: every identity that ever signed in or was created here is
+/// checked in, with its display name and avatar. The identity chip
+/// dropdown reads this list, not the browser's session stash.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct UserProfile {
+    pub display_name: String,
+    pub avatar: String,
+    pub created_ms: u64,
+}
+
+/// Public identity row for the sign-in and chip dropdowns.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PublicUser {
+    pub did: String,
+    pub display_name: String,
+    pub has_avatar: bool,
+}
+
+/// Mesh-wide site flags, owner-managed. `disable_new_users` defaults to
+/// false: with creation open, signed-in users read and update; creating
+/// and deleting identities pauses while the flag is on, for every
+/// subscriber of this site, until the owner turns it back off.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SiteFlags {
+    pub disable_new_users: bool,
+}
+
+impl Default for SiteFlags {
+    fn default() -> Self {
+        SiteFlags { disable_new_users: false }
+    }
+}
+
+#[cfg(feature = "ssr")]
+fn willow_dir() -> std::path::PathBuf {
+    std::path::Path::new("exostorage").join("willow")
+}
+
+#[cfg(feature = "ssr")]
+fn users_file() -> std::path::PathBuf {
+    willow_dir().join("users.json")
+}
+
+#[cfg(feature = "ssr")]
+fn flags_file() -> std::path::PathBuf {
+    willow_dir().join("site-flags.json")
+}
+
+#[cfg(feature = "ssr")]
+fn load_users() -> HashMap<String, UserProfile> {
+    std::fs::read_to_string(users_file())
+        .ok()
+        .and_then(|j| serde_json::from_str(&j).ok())
+        .unwrap_or_default()
+}
+
+#[cfg(feature = "ssr")]
+fn save_users(map: &HashMap<String, UserProfile>) {
+    let _ = std::fs::create_dir_all(willow_dir());
+    if let Ok(json) = serde_json::to_string(map) {
+        let _ = std::fs::write(users_file(), json);
+    }
+}
+
+#[cfg(feature = "ssr")]
+fn users_empty() -> bool {
+    load_users().is_empty()
+}
+
+#[cfg(feature = "ssr")]
+fn site_flags() -> SiteFlags {
+    std::fs::read_to_string(flags_file())
+        .ok()
+        .and_then(|j| serde_json::from_str(&j).ok())
+        .unwrap_or_default()
+}
+
+#[cfg(feature = "ssr")]
+fn owner_did_list() -> Vec<String> {
+    match std::env::var("OWNER_DID") {
+        Ok(v) => v.split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect(),
+        Err(_) => vec![],
+    }
+}
+
+#[cfg(feature = "ssr")]
+fn is_owner_did(did: &str) -> bool {
+    owner_did_list().iter().any(|o| o == did)
+}
+
+#[cfg(feature = "ssr")]
+fn short_did(did: &str) -> String {
+    let tail: String = did.chars().rev().take(8).collect::<String>().chars().rev().collect();
+    format!("…{tail}")
+}
+
+#[cfg(feature = "ssr")]
+fn upsert_profile(did: &str, display_name: String, avatar: String) {
+    let mut map = load_users();
+    let entry = map.entry(did.to_string()).or_insert(UserProfile {
+        display_name: display_name.clone(),
+        avatar: avatar.clone(),
+        created_ms: now_epoch() * 1000,
+    });
+    if !display_name.is_empty() {
+        entry.display_name = display_name;
+    }
+    if !avatar.is_empty() {
+        entry.avatar = avatar;
+    }
+    save_users(&map);
+}
+
+/// Check a signing-in identity into the Willow user list. First sight
+/// gets a readable default name derived from the identity itself.
+#[cfg(feature = "ssr")]
+fn ensure_profile(did: &str) {
+    let map = load_users();
+    if !map.contains_key(did) {
+        upsert_profile(did, short_did(did), String::new());
+    }
+}
+
+/// Identities the local Willow store knows, newest first.
+#[server]
+pub async fn users_list() -> Result<Vec<PublicUser>, ServerFnError> {
+    let map = load_users();
+    let mut rows: Vec<PublicUser> = map
+        .into_iter()
+        .map(|(did, p)| PublicUser { did, display_name: p.display_name, has_avatar: !p.avatar.is_empty() })
+        .collect();
+    rows.sort_by(|a, b| b.did.cmp(&a.did));
+    Ok(rows)
+}
+
+/// Avatar image for a known identity. Empty when none was set.
+#[server]
+pub async fn user_avatar(did: String) -> Result<String, ServerFnError> {
+    Ok(load_users().get(did.trim()).map(|p| p.avatar.clone()).unwrap_or_default())
+}
+
+/// Update your own display name and avatar. Reading and updating stay
+/// open to every signed-in user at all times.
+#[server]
+pub async fn update_profile(token: String, display_name: String, avatar: String) -> Result<(), ServerFnError> {
+    let Some(did) = caller_did(&token) else {
+        return Err(ServerFnError::ServerError("No session. Sign in first.".into()));
+    };
+    let display_name = display_name.trim().to_string();
+    if display_name.is_empty() {
+        return Err(ServerFnError::ServerError("The display name cannot stay empty.".into()));
+    }
+    if avatar.len() > 262144 {
+        return Err(ServerFnError::ServerError("That avatar image is too large.".into()));
+    }
+    upsert_profile(&did, display_name, avatar);
+    Ok(())
+}
+
+/// Remove an identity from the Willow user list. Removing pauses with
+/// creation while the owner flag is on, except for the owner.
+#[server]
+pub async fn delete_identity(token: String, did: String) -> Result<(), ServerFnError> {
+    let Some(caller) = caller_did(&token) else {
+        return Err(ServerFnError::ServerError("No session. Sign in first.".into()));
+    };
+    let did = did.trim().to_string();
+    let owner = is_owner_did(&caller);
+    if caller != did && !owner {
+        return Err(ServerFnError::ServerError("You can only remove your own identity.".into()));
+    }
+    if site_flags().disable_new_users && !owner {
+        return Err(ServerFnError::ServerError("Removing identities is paused by the owner.".into()));
+    }
+    let mut map = load_users();
+    map.remove(&did);
+    save_users(&map);
+    if let Ok(mut s) = SESSIONS.lock() {
+        s.retain(|_, d| d != &did);
+    }
+    Ok(())
+}
+
+/// Read the mesh-wide site flags.
+#[server]
+pub async fn get_flags() -> Result<SiteFlags, ServerFnError> {
+    Ok(site_flags())
+}
+
+/// Set the mesh-wide site flags. Owner identities only.
+#[server]
+pub async fn set_flags(token: String, flags: SiteFlags) -> Result<(), ServerFnError> {
+    let Some(caller) = caller_did(&token) else {
+        return Err(ServerFnError::ServerError("No session. Sign in first.".into()));
+    };
+    if !is_owner_did(&caller) {
+        return Err(ServerFnError::ServerError("Only the owner changes site flags.".into()));
+    }
+    let _ = std::fs::create_dir_all(willow_dir());
+    match serde_json::to_string(&flags) {
+        Ok(json) => match std::fs::write(flags_file(), json) {
+            Ok(()) => Ok(()),
+            Err(_) => Err(ServerFnError::ServerError("Flags did not save.".into())),
+        },
+        Err(_) => Err(ServerFnError::ServerError("Flags did not encode.".into())),
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+const SESSIONS_KEY: &str = "exo_sessions";
+#[cfg(target_arch = "wasm32")]
+const CURRENT_KEY: &str = "exo_current";
+
+/// Browser multi-session stash: every signed-in identity keeps its token
+/// keyed by did, so the chip switches between live sessions without
+/// asking for secrets again. Server builds get inert stubs.
+#[cfg(target_arch = "wasm32")]
+fn session_map() -> std::collections::HashMap<String, String> {
+    web_sys::window()
+        .and_then(|w| w.local_storage().ok())
+        .flatten()
+        .and_then(|s| s.get_item(SESSIONS_KEY).ok())
+        .flatten()
+        .and_then(|j| serde_json::from_str(&j).ok())
+        .unwrap_or_default()
+}
+
+#[cfg(target_arch = "wasm32")]
+fn write_session_map(map: &std::collections::HashMap<String, String>) {
+    if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok()).flatten() {
+        if let Ok(json) = serde_json::to_string(map) {
+            let _ = storage.set_item(SESSIONS_KEY, &json);
+        }
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn stash_session(did: &str, token: &str) {
+    let mut map = session_map();
+    map.insert(did.to_string(), token.to_string());
+    write_session_map(&map);
+    store_token(token);
+    if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok()).flatten() {
+        let _ = storage.set_item(CURRENT_KEY, did);
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub fn stash_session(_did: &str, _token: &str) {}
+
+/// Token for the currently active identity.
+#[cfg(target_arch = "wasm32")]
+pub fn active_token() -> Option<String> {
+    read_token()
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub fn active_token() -> Option<String> {
+    None
+}
+
+/// Did of the currently active identity, if the stash knows it.
+#[cfg(target_arch = "wasm32")]
+pub fn active_did() -> Option<String> {
+    let token = read_token()?;
+    session_map().into_iter().find(|(_, t)| t == &token).map(|(d, _)| d)
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub fn active_did() -> Option<String> {
+    None
+}
+
+/// Every identity holding a live browser session.
+#[cfg(target_arch = "wasm32")]
+pub fn live_sessions() -> Vec<(String, String)> {
+    session_map().into_iter().collect()
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub fn live_sessions() -> Vec<(String, String)> {
+    vec![]
+}
+
+/// Switch the active identity to another live session.
+#[cfg(target_arch = "wasm32")]
+pub fn switch_session(did: &str) -> bool {
+    match session_map().get(did).cloned() {
+        Some(token) => {
+            store_token(&token);
+            if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok()).flatten() {
+                let _ = storage.set_item(CURRENT_KEY, did);
+            }
+            true
+        }
+        None => false,
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub fn switch_session(_did: &str) -> bool {
+    false
+}
+
+/// Drop one identity's browser session. Clears the active token when it
+/// was the one in use.
+#[cfg(target_arch = "wasm32")]
+pub fn drop_session(did: &str) {
+    let mut map = session_map();
+    let removed = map.remove(did);
+    write_session_map(&map);
+    if let Some(token) = removed {
+        if read_token().as_deref() == Some(token.as_str()) {
+            clear_token();
+        }
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub fn drop_session(_did: &str) {}
+
+/// Display name for a known identity. Empty when unknown.
+#[server]
+pub async fn user_display_name(did: String) -> Result<String, ServerFnError> {
+    Ok(load_users().get(did.trim()).map(|p| p.display_name.clone()).unwrap_or_default())
 }
