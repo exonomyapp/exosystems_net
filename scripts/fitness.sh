@@ -36,10 +36,10 @@ fi
 # F3 — decision log integrity (decisions/README.md):
 # every record file must appear in the index.
 MISSING=""
-for f in "$ROOT"/decisions/*.md; do
+for f in "$ROOT"/docs/decisions/*.md; do
   name=$(basename "$f")
   [ "$name" = "README.md" ] && continue
-  grep -q "($name)" "$ROOT/decisions/README.md" || MISSING="$MISSING $name"
+  grep -q "($name)" "$ROOT/docs/decisions/README.md" || MISSING="$MISSING $name"
 done
 if [ -z "$MISSING" ]; then
   pass "F3 decision index lists every record"
