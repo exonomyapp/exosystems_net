@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 640" font-family="Georgia, 'Times New Roman', serif">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4A7AB5"/>
+    </marker>
+  </defs>
+  <g stroke="#4A7AB5" fill="none" stroke-width="1.5">
+    <rect x="30" y="80" width="500" height="380" stroke-dasharray="8 5"/>
+    <rect x="610" y="80" width="480" height="380" stroke-dasharray="8 5"/>
+    <rect x="55" y="150" width="450" height="80"/>
+    <rect x="55" y="286" width="450" height="80"/>
+    <rect x="635" y="140" width="430" height="76"/>
+    <rect x="635" y="268" width="430" height="72"/>
+    <rect x="635" y="368" width="430" height="76"/>
+    <circle cx="76" cy="180" r="10"/>
+    <circle cx="76" cy="316" r="10"/>
+    <circle cx="656" cy="170" r="10"/>
+    <circle cx="656" cy="296" r="10"/>
+    <circle cx="656" cy="398" r="10"/>
+    <path d="M505,190 C555,190 560,186 606,184" marker-end="url(#ah)"/>
+    <path d="M505,330 C555,330 560,400 606,402" marker-end="url(#ah)"/>
+    <path d="M280,278 L280,248" marker-end="url(#ah)"/>
+    <path d="M850,260 L850,230" marker-end="url(#ah)"/>
+    <rect x="30" y="484" width="1060" height="112"/>
+    <path d="M880 484 V596"/>
+  </g>
+  <g fill="#4A7AB5">
+    <text x="30" y="46" font-size="22" letter-spacing="4">EXOSYSTEMS.NET — SYSTEM CONTEXT</text>
+    <text x="55" y="116" font-size="15" letter-spacing="3">LOCAL MACHINE</text>
+    <text x="635" y="116" font-size="15" letter-spacing="3">TENCENT INSTANCE</text>
+    <text x="55" y="138" font-size="13" font-style="italic">owner · reader · stranger (people)</text>
+    <text x="94" y="184" font-size="15">1 · BROWSER</text>
+    <text x="94" y="206" font-size="12" font-family="'Courier New', monospace">sign-in, gated docs, per-user pages</text>
+    <text x="94" y="320" font-size="15">2 · EXOTALK BUILD</text>
+    <text x="94" y="342" font-size="12" font-family="'Courier New', monospace">profile bundle · relay list</text>
+    <text x="674" y="174" font-size="15">3 · SITE APP</text>
+    <text x="674" y="196" font-size="12" font-family="'Courier New', monospace">Leptos SSR · session tickets</text>
+    <text x="674" y="300" font-size="15">5 · NGINX</text>
+    <text x="674" y="322" font-size="12" font-family="'Courier New', monospace">front door</text>
+    <text x="674" y="402" font-size="15">4 · CONSCIA NODE</text>
+    <text x="674" y="424" font-size="12" font-family="'Courier New', monospace">plain helper · conscire endpoint</text>
+    <text x="540" y="172" font-size="12" font-style="italic">serves</text>
+    <text x="536" y="372" font-size="12" font-style="italic">conscires</text>
+    <text x="294" y="264" font-size="12" font-style="italic">reads back</text>
+    <text x="790" y="248" font-size="12" font-style="italic">passes in</text>
+    <text x="44" y="508" font-size="12" letter-spacing="1">DWG C4-01 — System context: sheet 1 of the C4 set (Context, Containers, Components, Code).</text>
+    <text x="44" y="528" font-size="11">Shows people on the local machine, the site application, the helper node, and the front door on the instance.</text>
+    <text x="44" y="546" font-size="11">Flows: (a) sign-in and page reads, (b) conscire handshake, (c) local publish with read-back, (d) ingress to the site.</text>
+    <text x="44" y="570" font-size="11" font-style="italic">Notation: dashed rectangles are trust boundaries; solid rectangles are runnable units; arrows are flows.</text>
+    <text x="894" y="516" font-size="11">v0.1.0 · 2026-09-28</text>
+    <text x="894" y="536" font-size="11">Status: Proposed</text>
+  </g>
+</svg>

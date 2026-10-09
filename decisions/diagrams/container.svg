@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 900" font-family="Georgia, 'Times New Roman', serif">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4A7AB5"/>
+    </marker>
+  </defs>
+  <g stroke="#4A7AB5" fill="none" stroke-width="1.5">
+    <rect x="30" y="80" width="520" height="640" stroke-dasharray="8 5"/>
+    <rect x="630" y="80" width="460" height="640" stroke-dasharray="8 5"/>
+    <rect x="50" y="130" width="230" height="84"/>
+    <rect x="50" y="262" width="230" height="84"/>
+    <rect x="50" y="394" width="230" height="84"/>
+    <rect x="50" y="526" width="230" height="84"/>
+    <rect x="312" y="130" width="218" height="84"/>
+    <rect x="312" y="262" width="218" height="84"/>
+    <rect x="312" y="394" width="218" height="84"/>
+    <rect x="650" y="130" width="420" height="88"/>
+    <rect x="650" y="278" width="420" height="96"/>
+    <rect x="650" y="434" width="420" height="96"/>
+    <path d="M165,214 L165,254" marker-end="url(#ah)"/>
+    <path d="M165,526 L165,486" marker-end="url(#ah)"/>
+    <path d="M280,436 L296,436 L296,320 L310,320" marker-end="url(#ah)"/>
+    <path d="M421,478 L421,660 L170,660 L170,612" marker-end="url(#ah)"/>
+    <path d="M530,172 L626,174" marker-end="url(#ah)"/>
+    <path d="M530,304 C580,304 580,330 626,332" marker-end="url(#ah)"/>
+    <path d="M860,218 L860,270" marker-end="url(#ah)"/>
+    <path d="M860,374 L860,426" marker-end="url(#ah)"/>
+    <rect x="30" y="744" width="1060" height="112"/>
+    <path d="M880 744 V856"/>
+    <circle cx="421" cy="478" r="3.5" fill="#4A7AB5" stroke="none"/>
+    <circle cx="170" cy="610" r="3.5" fill="#4A7AB5" stroke="none"/>
+    <circle cx="280" cy="436" r="3.5" fill="#4A7AB5" stroke="none"/>
+    <circle cx="165" cy="526" r="3.5" fill="#4A7AB5" stroke="none"/>
+  </g>
+  <g fill="#4A7AB5">
+    <text x="30" y="46" font-size="22" letter-spacing="4">EXOSYSTEMS.NET — CONTAINER PLAN</text>
+    <text x="50" y="112" font-size="14" letter-spacing="3">SITE APP — LEPTOS SSR</text>
+    <text x="650" y="112" font-size="14" letter-spacing="3">CONSCIA NODE — PLAIN</text>
+    <text x="60" y="156" font-size="13.5">1 · SERVER PAGES</text>
+    <text x="60" y="288" font-size="13.5">2 · BROWSER BUNDLE</text>
+    <text x="60" y="420" font-size="13.5">3 · WILLOW STORE</text>
+    <text x="60" y="552" font-size="13.5">4 · SESSION + STORE</text>
+    <text x="322" y="156" font-size="13.5">6 · DOCS (GATED)</text>
+    <text x="322" y="288" font-size="13.5">7 · PROFILE PAGE</text>
+    <text x="322" y="420" font-size="13.5">5 · SIGN-IN GATE</text>
+    <text x="662" y="156" font-size="13.5">8 · CONSCIRE ENDPOINT</text>
+    <text x="662" y="304" font-size="13.5">9 · WILLOW NAMESPACES</text>
+    <text x="662" y="460" font-size="13.5">10 · SQLITE STATE</text>
+    <text x="60" y="176" font-size="11" font-family="'Courier New', monospace">renders per-user HTML</text>
+    <text x="60" y="308" font-size="11" font-family="'Courier New', monospace">hydrates, animates only</text>
+    <text x="60" y="440" font-size="11" font-family="'Courier New', monospace">public · shared · private</text>
+    <text x="60" y="572" font-size="11" font-family="'Courier New', monospace">tickets, delegations</text>
+    <text x="322" y="176" font-size="11" font-family="'Courier New', monospace">reads store 3 only</text>
+    <text x="322" y="308" font-size="11" font-family="'Courier New', monospace">relay list, bundle export</text>
+    <text x="322" y="440" font-size="11" font-family="'Courier New', monospace">present or generate did</text>
+    <text x="662" y="176" font-size="11" font-family="'Courier New', monospace">owner-approved joins</text>
+    <text x="662" y="324" font-size="11" font-family="'Courier New', monospace">encrypted, content-addressed</text>
+    <text x="662" y="480" font-size="11" font-family="'Courier New', monospace">conscired identities, caps</text>
+    <text x="179" y="240" font-size="11.5" font-style="italic">hydrates</text>
+    <text x="80" y="508" font-size="11.5" font-style="italic">partitions</text>
+    <text x="308" y="372" font-size="11.5" font-style="italic">reads</text>
+    <text x="280" y="648" font-size="11.5" font-style="italic">issues tickets</text>
+    <text x="544" y="160" font-size="11.5" font-style="italic">conscires</text>
+    <text x="540" y="292" font-size="11.5" font-style="italic">syncs 3-9</text>
+    <text x="874" y="248" font-size="11.5" font-style="italic">persists</text>
+    <text x="874" y="404" font-size="11.5" font-style="italic">indexes</text>
+    <text x="44" y="768" font-size="12" letter-spacing="1">DWG C4-02 — Container plan: sheet 2 of the C4 set (Context, Containers, Components, Code).</text>
+    <text x="44" y="788" font-size="11">Shows the ten inner containers: seven in the site application, three in the helper node.</text>
+    <text x="44" y="806" font-size="11">Flows: hydrates, reads, partitions, issues tickets, conscires, syncs 3-9, persists, indexes.</text>
+    <text x="44" y="830" font-size="11" font-style="italic">Notation: dashed rectangles are trust boundaries; solid rectangles are runnable units; arrows are flows.</text>
+    <text x="894" y="776" font-size="11">v0.1.0 · 2026-09-28</text>
+    <text x="894" y="796" font-size="11">Status: Proposed</text>
+  </g>
+</svg>

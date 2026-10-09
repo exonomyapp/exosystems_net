@@ -1,0 +1,92 @@
+name: Build and deploy exosystems.net
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  fitness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run fitness checks
+        run: bash scripts/fitness.sh
+
+  build:
+    needs: fitness
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Install cargo-leptos
+        run: cargo install cargo-leptos --locked
+      - name: Install sass
+        run: sudo apt-get update && sudo apt-get install -y sassc
+      - name: Build release
+        run: cargo leptos build --release
+      - name: Pack artifact
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          mkdir -p deploy/site
+          cp target/release/exosystems_net deploy/exosystems_net-ssr
+          cp -r target/site/* deploy/site/
+      - name: Upload artifact
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: deploy
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: site
+          path: deploy
+      - name: Copy to host and restart
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          source: "deploy/*"
+          target: "/opt/exosystems_net/incoming"
+      - name: Activate on host
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          script: |
+            set -e
+            mkdir -p /opt/exosystems_net/bin /opt/exosystems_net/site
+            cp /opt/exosystems_net/incoming/deploy/exosystems_net-ssr /opt/exosystems_net/bin/exosystems_net-ssr
+            chmod +x /opt/exosystems_net/bin/exosystems_net-ssr
+            rm -rf /opt/exosystems_net/site/pkg
+            cp -r /opt/exosystems_net/incoming/deploy/site/* /opt/exosystems_net/site/
+            cat > /etc/systemd/system/exosystems-net.service <<'UNIT'
+            [Unit]
+            Description=ExoSystems.net Leptos site
+            After=network.target
+            [Service]
+            Type=simple
+            WorkingDirectory=/opt/exosystems_net
+            EnvironmentFile=/opt/exosystems_net/env
+            ExecStart=/opt/exosystems_net/bin/exosystems_net-ssr
+            Restart=always
+            [Install]
+            WantedBy=multi-user.target
+            UNIT
+            systemctl daemon-reload
+            systemctl enable exosystems-net
+            systemctl restart exosystems-net
+            sleep 5
+            curl -sf http://127.0.0.1:3000/ | head -c 200
+            echo "DEPLOY-OK"

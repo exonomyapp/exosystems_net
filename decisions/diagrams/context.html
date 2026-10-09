@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C4-01 — System context</title>
+<link rel="stylesheet" href="sheet.css">
+</head>
+<body style="margin:0;background:transparent">
+<div class="sheet">
+  <h1>EXOSYSTEMS.NET — SYSTEM CONTEXT</h1>
+  <div class="zones">
+    <section class="zone">
+      <h2>LOCAL MACHINE</h2>
+      <p class="actor">owner · reader · stranger (people)</p>
+      <div class="box"><h3><span class="n">1</span>BROWSER</h3><p>sign-in, gated docs, per-user pages</p></div>
+      <div class="box"><h3><span class="n">2</span>EXOTALK BUILD</h3><p>profile bundle · relay list</p></div>
+    </section>
+    <section class="zone">
+      <h2>TENCENT INSTANCE</h2>
+      <div class="box"><h3><span class="n">3</span>SITE APP</h3><p>Leptos SSR · session tickets</p></div>
+      <div class="box"><h3><span class="n">4</span>CONSCIA NODE</h3><p>plain helper · conscire endpoint</p></div>
+      <div class="box"><h3><span class="n">5</span>NGINX</h3><p>front door</p></div>
+    </section>
+  </div>
+  <ol class="flows">
+    <li><span class="n">a</span>people sign in at 1, read per-user pages from 3</li>
+    <li><span class="n">b</span>2 conscires to 4; 4 holds and forwards for 2</li>
+    <li><span class="n">c</span>2 publishes locally, syncs via 4, reads back at 1</li>
+    <li><span class="n">d</span>5 passes outside traffic in to 3</li>
+  </ol>
+  <div class="titleblock">
+    <div class="t">DWG C4-01 — System context: sheet 1 of the C4 set (Context, Containers, Components, Code). Shows people on the local machine, the site application, the helper node, and the front door on the instance. Flows: (a) sign-in and page reads, (b) conscire handshake, (c) local publish with read-back, (d) ingress to the site. Notation: dashed zones are trust boundaries; boxes are runnable units; arrows are flows.</div>
+    <div>v0.1.0<br>2026-09-28<br>Status: Proposed</div>
+  </div>
+</div>
+</body>
+</html>

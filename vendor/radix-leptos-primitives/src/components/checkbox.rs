@@ -1,0 +1,384 @@
+use leptos::callback::Callback;
+use leptos::children::Children;
+use leptos::prelude::*;
+use crate::utils::{merge_optional_classes, generate_id};
+
+/// Checkbox component with proper accessibility and styling variants
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum CheckboxVariant {
+    Default,
+    Destructive,
+    Ghost,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum CheckboxSize {
+    Default,
+    Sm,
+    Lg,
+}
+
+impl CheckboxVariant {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            CheckboxVariant::Default => "default",
+            CheckboxVariant::Destructive => "destructive",
+            CheckboxVariant::Ghost => "ghost",
+        }
+    }
+}
+
+impl CheckboxSize {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            CheckboxSize::Default => "default",
+            CheckboxSize::Sm => "sm",
+            CheckboxSize::Lg => "lg",
+        }
+    }
+}
+
+
+/// Checkbox root component
+#[component]
+pub fn Checkbox(
+    /// Whether the checkbox is checked
+    #[prop(optional, default = false)]
+    checked: bool,
+    /// Whether the checkbox is indeterminate
+    #[prop(optional, default = false)]
+    indeterminate: bool,
+    /// Whether the checkbox is disabled
+    #[prop(optional, default = false)]
+    disabled: bool,
+    /// Checkbox styling variant
+    #[prop(optional, default = CheckboxVariant::Default)]
+    variant: CheckboxVariant,
+    /// Checkbox size
+    #[prop(optional, default = CheckboxSize::Default)]
+    size: CheckboxSize,
+    /// CSS classes
+    #[prop(optional)]
+    class: Option<String>,
+    /// CSS styles
+    #[prop(optional)]
+    style: Option<String>,
+    /// Checked change event handler
+    #[prop(optional)]
+    onchecked_change: Option<Callback<bool>>,
+    /// Indeterminate change event handler
+    #[prop(optional)]
+    _onindeterminate_change: Option<Callback<bool>>,
+    /// Child content
+    children: Children,
+) -> impl IntoView {
+    let checkbox_id = generate_id("checkbox");
+    let label_id = generate_id("checkbox-label");
+
+    // Build data attributes for styling
+    let data_variant = variant.as_str();
+    let data_size = size.as_str();
+
+    // Merge classes with data attributes for CSS targeting
+    let base_classes = "radix-checkbox";
+    let combined_class = merge_optional_classes(Some(base_classes), class.as_deref())
+        .unwrap_or_else(|| base_classes.to_string());
+
+    // Handle keyboard navigation
+    let handle_keydown = move |e: web_sys::KeyboardEvent| match e.key().as_str() {
+        " " | "Enter" => {
+            e.prevent_default();
+            if !disabled {
+                if let Some(onchecked_change) = onchecked_change {
+                    onchecked_change.run(!checked);
+                }
+            }
+        }
+        _ => {}
+    };
+
+    // Handle click
+    let handle_click = move |e: web_sys::MouseEvent| {
+        e.prevent_default();
+        if !disabled {
+            if let Some(onchecked_change) = onchecked_change {
+                onchecked_change.run(!checked);
+            }
+        }
+    };
+
+    view! {
+        <div
+            class=combined_class
+            style=style
+            data-variant=data_variant
+            data-size=data_size
+            data-checked=checked
+            data-indeterminate=indeterminate
+            data-disabled=disabled
+            on:keydown=handle_keydown
+        >
+            <input
+                id=checkbox_id.clone()
+                type="checkbox"
+                checked=checked
+                disabled=disabled
+                tabindex="-1"
+                aria-hidden="true"
+            />
+            <label
+                id=label_id
+                for=checkbox_id.clone()
+                class="radix-checkbox-label"
+                on:click=handle_click
+            >
+                {children()}
+            </label>
+        </div>
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{CheckboxSize, CheckboxVariant};
+    use proptest::prelude::*;
+use crate::utils::{merge_optional_classes, generate_id};
+
+    // 1. Basic Rendering Tests
+    #[test]
+    fn test_checkbox_variants() {
+        run_test(|| {
+            let variants = [
+                CheckboxVariant::Default,
+                CheckboxVariant::Destructive,
+                CheckboxVariant::Ghost,
+            ];
+
+            for variant in variants {
+                assert!(!variant.as_str().is_empty());
+            }
+        });
+    }
+
+    #[test]
+    fn test_checkbox_sizes() {
+        run_test(|| {
+            let sizes = [CheckboxSize::Default, CheckboxSize::Sm, CheckboxSize::Lg];
+
+            for size in sizes {
+                assert!(!size.as_str().is_empty());
+            }
+        });
+    }
+
+    // 2. Props Validation Tests
+    #[test]
+    fn test_checkboxchecked_state() {
+        run_test(|| {
+            let checked = true;
+            let indeterminate = false;
+            let disabled = false;
+            let variant = CheckboxVariant::Default;
+            let size = CheckboxSize::Default;
+
+            assert!(checked);
+            assert!(!indeterminate);
+            assert!(!disabled);
+            assert_eq!(variant, CheckboxVariant::Default);
+            assert_eq!(size, CheckboxSize::Default);
+        });
+    }
+
+    #[test]
+    fn test_checkbox_unchecked_state() {
+        run_test(|| {
+            let checked = false;
+            let indeterminate = false;
+            let disabled = false;
+            let variant = CheckboxVariant::Destructive;
+            let size = CheckboxSize::Lg;
+
+            assert!(!checked);
+            assert!(!indeterminate);
+            assert!(!disabled);
+            assert_eq!(variant, CheckboxVariant::Destructive);
+            assert_eq!(size, CheckboxSize::Lg);
+        });
+    }
+
+    #[test]
+    fn test_checkboxindeterminate_state() {
+        run_test(|| {
+            let checked = false;
+            let indeterminate = true;
+            let disabled = false;
+            let variant = CheckboxVariant::Ghost;
+            let size = CheckboxSize::Sm;
+
+            assert!(!checked);
+            assert!(indeterminate);
+            assert!(!disabled);
+            assert_eq!(variant, CheckboxVariant::Ghost);
+            assert_eq!(size, CheckboxSize::Sm);
+        });
+    }
+
+    // 3. State Management Tests
+    #[test]
+    fn test_checkbox_state_changes() {
+        run_test(|| {
+            let mut checked = false;
+            let mut indeterminate = false;
+            let disabled = false;
+
+            assert!(!checked);
+            assert!(!indeterminate);
+            assert!(!disabled);
+
+            checked = true;
+            indeterminate = false;
+
+            assert!(checked);
+            assert!(!indeterminate);
+            assert!(!disabled);
+
+            checked = false;
+            indeterminate = false;
+
+            assert!(!checked);
+            assert!(!indeterminate);
+            assert!(!disabled);
+
+            checked = false;
+            indeterminate = true;
+
+            assert!(!checked);
+            assert!(indeterminate);
+            assert!(!disabled);
+        });
+    }
+
+    // 4. Event Handling Tests
+    #[test]
+    fn test_checkbox_keyboard_navigation() {
+        run_test(|| {
+            let space_pressed = true;
+            let enter_pressed = false;
+            let disabled = false;
+            let checked = false;
+
+            assert!(space_pressed);
+            assert!(!enter_pressed);
+            assert!(!disabled);
+            assert!(!checked);
+
+            space_pressed && !disabled;
+
+            if enter_pressed && !disabled {
+                panic!("Unexpected condition reached");
+            }
+        });
+    }
+
+    #[test]
+    fn test_checkbox_click_handling() {
+        run_test(|| {
+            let clicked = true;
+            let disabled = false;
+            let checked = false;
+
+            assert!(clicked);
+            assert!(!disabled);
+            assert!(!checked);
+
+            if clicked && !disabled {}
+        });
+    }
+
+    // 5. Accessibility Tests
+    #[test]
+    fn test_checkbox_accessibility() {
+        run_test(|| {
+            let role = "checkbox";
+            let ariachecked = "false";
+            let ariadisabled = "false";
+            let tabindex = "-1";
+
+            assert_eq!(role, "checkbox");
+            assert_eq!(ariachecked, "false");
+            assert_eq!(ariadisabled, "false");
+            assert_eq!(tabindex, "-1");
+        });
+    }
+
+    // 6. Edge Case Tests
+    #[test]
+    fn test_checkbox_edge_cases() {
+        run_test(|| {
+            let checked = true;
+            let indeterminate = true;
+            let disabled = false;
+
+            assert!(checked);
+            assert!(indeterminate);
+            assert!(!disabled);
+        });
+    }
+
+    #[test]
+    fn test_checkboxdisabled_state() {
+        run_test(|| {
+            let disabled = true;
+            let checked = false;
+            let indeterminate = false;
+
+            assert!(disabled);
+            assert!(!checked);
+            assert!(!indeterminate);
+        });
+    }
+
+    // 7. Property-Based Tests
+    proptest! {
+        #[test]
+        fn test_checkbox_properties(
+            variant in prop::sample::select(&[
+                CheckboxVariant::Default,
+                CheckboxVariant::Destructive,
+                CheckboxVariant::Ghost,
+            ]),
+            size in prop::sample::select(&[
+                CheckboxSize::Default,
+                CheckboxSize::Sm,
+                CheckboxSize::Lg,
+            ]),
+            checked in prop::bool::ANY,
+            indeterminate in prop::bool::ANY,
+            disabled in prop::bool::ANY
+        ) {
+            assert!(!variant.as_str().is_empty());
+            assert!(!size.as_str().is_empty());
+
+            // Test that boolean properties are properly typed
+            assert!(matches!(checked, true | false));
+            assert!(matches!(indeterminate, true | false));
+            assert!(matches!(disabled, true | false));
+
+            if disabled {
+                // Disabled checkbox should not be interactive
+            }
+
+            if indeterminate && checked {
+                // Indeterminate would take precedence
+            }
+        }
+    }
+
+    // Helper function for running tests
+    fn run_test<F>(f: F)
+    where
+        F: FnOnce(),
+    {
+        f();
+    }
+}

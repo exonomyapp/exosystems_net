@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- TEMPLATE — copy this file to start a new sheet. Replace every
+     [BRACKETED] placeholder. Add boxes by copying a .box block;
+     add flows by copying an <li>. Nothing here positions by hand:
+     the grid places everything, and type scales with its own box. -->
+<title>C4-XX — [SHEET NAME]</title>
+<link rel="stylesheet" href="sheet.css">
+</head>
+<body style="margin:0;background:transparent">
+<div class="sheet">
+  <h1>[PROJECT] — [SHEET NAME]</h1>
+  <div class="zones">
+    <!-- Copy <section class="zone"> per boundary. Zones stack
+         on narrow screens with no further work. -->
+    <section class="zone">
+      <h2>[ZONE NAME]</h2>
+      <!-- Optional people line. Delete if the sheet has no people. -->
+      <p class="actor">[who acts here]</p>
+      <!-- Copy .box per container. Number badges order the flows. -->
+      <div class="box"><h3><span class="n">1</span>[NAME]</h3><p>[one-line role]</p></div>
+      <div class="box"><h3><span class="n">2</span>[NAME]</h3><p>[one-line role]</p></div>
+    </section>
+    <section class="zone">
+      <h2>[ZONE NAME]</h2>
+      <div class="box"><h3><span class="n">3</span>[NAME]</h3><p>[one-line role]</p></div>
+    </section>
+  </div>
+  <!-- Flows read a–d. Each line names its numbered boxes. -->
+  <ol class="flows">
+    <li><span class="n">a</span>[who] [does what] at [N], [result] at [M]</li>
+  </ol>
+  <div class="titleblock">
+    <div class="t">DWG [C4-XX] · SHEET [N/M] · <a href="../significant-requirements.md">[RANGE]</a> · [STATUS]</div>
+    <div>v[APP VERSION]<br>[DATE]</div>
+  </div>
+</div>
+</body>
+</html>

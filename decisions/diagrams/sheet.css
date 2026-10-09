@@ -1,0 +1,116 @@
+/* exosystems.net decision diagrams — drafting-table sheet style.
+   Transparent ground (no page background). Ink: #2b2b2b.
+   Type scales with its own box via container-relative units, so text
+   and frame resize as one and nothing overlaps at any width. */
+.sheet {
+  container-type: inline-size;
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 1rem;
+  color: #2b2b2b;
+  font-family: Georgia, 'Times New Roman', serif;
+  background: transparent;
+}
+.sheet h1 {
+  font-size: clamp(1rem, 2.5cqi + 0.6rem, 1.4rem);
+  letter-spacing: 0.18em;
+  font-weight: normal;
+  margin: 0 0 1rem;
+}
+.zones {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+@media (max-width: 40rem) {
+  .zones { grid-template-columns: 1fr; }
+}
+.zone {
+  border: 0.1rem dashed #2b2b2b;
+  padding: 0.8rem;
+  display: grid;
+  gap: 0.7rem;
+  align-content: start;
+}
+.zone > h2 {
+  font-size: clamp(0.8rem, 2cqi + 0.45rem, 1rem);
+  letter-spacing: 0.22em;
+  font-weight: normal;
+  margin: 0;
+}
+.box {
+  border: 0.1rem solid #2b2b2b;
+  padding: 0.55rem 0.7rem;
+  display: grid;
+  gap: 0.2rem;
+}
+.box h3 {
+  font-size: clamp(0.75rem, 2.2cqi + 0.4rem, 0.95rem);
+  letter-spacing: 0.08em;
+  font-weight: normal;
+  margin: 0;
+}
+.box h3 .n {
+  display: inline-block;
+  border: 0.1rem solid #2b2b2b;
+  border-radius: 50%;
+  width: 1.5em;
+  height: 1.5em;
+  line-height: 1.35em;
+  text-align: center;
+  margin-right: 0.45em;
+  font-size: 0.85em;
+}
+.box p {
+  font-size: clamp(0.65rem, 1.8cqi + 0.35rem, 0.8rem);
+  font-family: 'Courier New', monospace;
+  margin: 0;
+}
+.actor {
+  font-style: italic;
+  font-size: clamp(0.7rem, 2cqi + 0.38rem, 0.85rem);
+  margin: 0;
+}
+.flows {
+  list-style: none;
+  margin: 1.2rem 0 0;
+  padding: 0.8rem 0 0;
+  border-top: 0.1rem solid #2b2b2b;
+  display: grid;
+  gap: 0.3rem;
+}
+.flows li {
+  font-size: clamp(0.7rem, 1.8cqi + 0.4rem, 0.85rem);
+  font-style: italic;
+}
+.flows .n {
+  display: inline-block;
+  border: 0.1rem solid #2b2b2b;
+  border-radius: 50%;
+  width: 1.5em;
+  height: 1.5em;
+  line-height: 1.35em;
+  text-align: center;
+  margin-right: 0.5em;
+  font-style: normal;
+  font-size: 0.85em;
+}
+.titleblock {
+  margin-top: 1.2rem;
+  border: 0.1rem solid #2b2b2b;
+  display: grid;
+  grid-template-columns: 1fr 12rem;
+}
+.titleblock > div {
+  padding: 0.4rem 0.6rem;
+  font-size: clamp(0.55rem, 1.4cqi + 0.3rem, 0.68rem);
+  font-family: 'Courier New', monospace;
+}
+.titleblock > div + div { border-left: 0.1rem solid #2b2b2b; }
+.titleblock .t {
+  font-family: Georgia, serif;
+  letter-spacing: 0.12em;
+}
+/* gentle document links: underlined ink, no color shift */
+.sheet a { color: inherit; text-decoration: underline dotted; }
+.sheet a:hover { text-decoration: underline solid; }

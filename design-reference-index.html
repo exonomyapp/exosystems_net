@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>ExoSystems</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <style>
+        /* UI DESIGN PRINCIPLE: The entire UI design must align with maximal CSS Grid
+         * implementation for layout and positioning. All layout and positioning decisions
+         * must use CSS Grid features (grid-template, grid-area, justify-self, align-self,
+         * gap, container query units, etc.) rather than absolute positioning or fixed
+         * offsets. Absolute positioning is reserved for overlay elements that must escape
+         * the grid flow (e.g., scroll buttons), and even then, grid alignment should be
+         * preferred where possible. */
+        :root {
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --text: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --accent: #3b82f6;
+            --nav-bg: #0f172a;
+            --radius-sm: 6px;
+            --radius: 8px;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+            width: 100%;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 16px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            display: grid;
+            grid-template-rows: auto 1fr;
+        }
+
+        /* Masthead carousel: the slides share one grid cell behind the
+         * navbar and hero rows. Loop is 26s for 2 slides, 10s pause each
+         * with 3s crossfades. Extra slides: lengthen the loop and stagger
+         * each slide's animation-delay by one slot. */
+        .masthead {
+            display: grid;
+            grid-template-rows: 216px auto;
+        }
+        .slide {
+            grid-row: 1 / 3;
+            grid-column: 1;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            animation: heroFade 26s linear infinite;
+        }
+        .slide-1 { background-image: url('/assets/hero/slide-1.jpg'); }
+        .slide-2 { background-image: url('/assets/hero/slide-2.jpg'); animation-delay: 13s; }
+        @keyframes heroFade {
+            0% { opacity: 0; }
+            11.538% { opacity: 1; }
+            50% { opacity: 1; }
+            61.538% { opacity: 0; }
+            100% { opacity: 0; }
+        }
+
+        .navbar {
+            grid-row: 1;
+            grid-column: 1;
+            z-index: 1;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 2.5rem 2.5rem 0;
+            height: 216px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .navbar-logo {
+            height: 100%;
+            width: auto;
+            max-height: 216px;
+            display: block;
+            background: rgba(15, 23, 42, 0.5);
+            padding: 0.5rem;
+        }
+
+        .brandrow {
+            display: contents;
+        }
+
+        .navbar-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+            background: rgba(15, 23, 42, 0.5);
+            padding: 1rem 1.25rem;
+        }
+
+        .navbar-menu a {
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 1.1rem;
+            font-weight: 500;
+            letter-spacing: 0.01em;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-sm);
+            transition: color 0.15s ease, background 0.15s ease;
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .navbar-menu a:hover {
+            color: #f8fafc;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .main {
+            display: grid;
+            grid-template-rows: 1fr;
+            padding: 4rem 4rem 3rem;
+            width: 100%;
+            margin: 0 auto;
+            gap: 1.25rem;
+            min-height: 0;
+        }
+
+        .hero {
+            grid-row: 2;
+            grid-column: 1;
+            z-index: 1;
+            display: grid;
+            grid-template-rows: auto auto;
+            gap: 0.35rem;
+            padding: 2.5rem 2.5rem 3rem;
+        }
+
+        .hero-brand {
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--accent);
+        }
+
+        .hero h1 {
+            font-size: clamp(1.75rem, 4.5vw, 2.75rem);
+            font-weight: 700;
+            letter-spacing: -0.035em;
+            line-height: 1.1;
+            color: #f8fafc;
+            margin: 0;
+        }
+
+        .tagline-block {
+            background: rgba(15, 23, 42, 0.5);
+            padding: 1rem 1.25rem;
+            width: fit-content;
+        }
+
+        .tagline-block p {
+            font-size: clamp(1.75rem, 4.5vw, 2.75rem);
+            font-weight: 400;
+            letter-spacing: -0.035em;
+            line-height: 1.1;
+            color: #f8fafc;
+            margin: 0;
+        }
+
+        .tagline-block .t-sub {
+            display: block;
+            margin-top: 0.35em;
+            margin-bottom: -0.55em;
+            font-size: 1em;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-weight: 400;
+            letter-spacing: 0;
+            transform: scaleY(0.5);
+            transform-origin: left top;
+        }
+
+        .hero-tagline {
+            font-size: clamp(1.75rem, 4.5vw, 2.75rem);
+            font-weight: 700;
+            letter-spacing: -0.035em;
+            line-height: 1.1;
+            color: #f8fafc;
+            margin: 0;
+        }
+
+        .family {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.9125rem;
+            align-content: start;
+            min-height: 0;
+        }
+
+        .family-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.1rem 1.15rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+        }
+
+        .family-card:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.04);
+            transform: translateY(-1px);
+        }
+
+        .family-card h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text);
+            letter-spacing: -0.01em;
+            margin: 0;
+        }
+
+        .family-card p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .family-card.card-art {
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: contain;
+        }
+
+        .family-card.card-art-exotalk {
+            background-image: url('/assets/cards/exotalk.png');
+        }
+
+        .family-card.card-art-exosoul {
+            background-image: url('/assets/cards/exosoul.png');
+        }
+
+        .family-card.card-art-conscia {
+            background-image: url('/assets/cards/conscia.png');
+        }
+
+        .family-card.card-art-exonomy {
+            background-image: url('/assets/cards/exonomy.png');
+        }
+
+        .family-card.card-art-exocracy {
+            background-image: url('/assets/cards/exocracy.png');
+        }
+
+        .family-card.card-art-republet {
+            background-image: url('/assets/cards/republet.png');
+        }
+
+        .family-card.card-art-threesteps {
+            background-image: url('/assets/cards/threesteps.png');
+        }
+
+        .family-card.card-art-internovel {
+            background-image: url('/assets/cards/internovel.png');
+        }
+
+        /* Flip cards: twice the size, two faces, grid-built, rem-scaled. */
+        .flip { perspective: 120rem; cursor: pointer; }
+        .flip-box {
+            display: grid;
+            aspect-ratio: 1 / 1;
+            transition: transform 0.9s ease-in-out;
+            transform-style: preserve-3d;
+        }
+        .flip-box.flipped { transform: rotateY(180deg); }
+        .face {
+            grid-area: 1 / 1;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            overflow: hidden;
+            background: #dbeafe;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 2.5rem;
+            display: grid;
+            min-height: 0;
+            min-width: 0;
+        }
+        .flip:hover .face {
+            border-color: #cbd5e1;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.04);
+        }
+        .face.front { grid-template-rows: auto minmax(0, 1fr); padding: 0; gap: 0; background: #ece9f4; }
+        .face.front h3 {
+            grid-row: 1;
+            grid-column: 1;
+            align-self: start;
+            justify-self: stretch;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            background: linear-gradient(to right, #443377 0%, #443377 66.666%, #44337700 100%);
+            color: #f8fafc;
+            padding: 0.75rem 0 0.75rem 2.5rem;
+            font-size: 1.8rem;
+            line-height: 1.2;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            margin: 0;
+        }
+        .family > .flip:nth-child(1) .face.front h3 {
+            background: linear-gradient(to right, #5f48a6 0%, #5f48a6 66.666%, #5f48a600 100%);
+        }
+        .family > .flip:nth-child(2) .face.front h3 {
+            background: linear-gradient(to right, #1e73e6 0%, #1e73e6 66.666%, #1e73e600 100%);
+        }
+        .family > .flip:nth-child(3) .face.front h3 {
+            background: linear-gradient(to right, #60a830 0%, #60a830 66.666%, #60a83000 100%);
+        }
+        .art { grid-row: 2; grid-column: 1; display: grid; grid-template-rows: 1fr 1fr; min-height: 0; min-width: 0; margin: 3%; }
+        .art img {
+            grid-row: 1 / 3;
+            grid-column: 1;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            object-position: center;
+            -webkit-mask-image: none;
+            mask-image: none;
+        }
+        .face.front .art,
+        .face.front .art img,
+        .face.front .teaser,
+        .face.front h3,
+        .face.back *,
+        .face.front * {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        .teaser {
+            grid-row: 2;
+            grid-column: 1;
+            align-self: end;
+            margin: 0 0 2.5rem;
+            padding: 2.5rem 2.5rem 0;
+            font-size: 1.35rem;
+            color: var(--text);
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 5;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-clamp: 5;
+        }
+        .face.back {
+            transform: rotateY(180deg);
+            container-type: inline-size;
+            position: relative;
+            grid-template-rows: auto minmax(0, 1fr);
+            gap: 1rem;
+            background: #ecf5e6;
+        }
+        .emblem {
+            grid-row: 1;
+            grid-column: 1;
+            max-width: 70%;
+            max-height: 100%;
+            justify-self: center;
+            align-self: center;
+            object-fit: contain;
+        }
+        .full { grid-row: 2; grid-column: 1; overflow-y: auto; scrollbar-width: none; min-height: 0;
+            -webkit-mask-image: none;
+            mask-image: none;
+        }
+        .full.fbot {
+            -webkit-mask-image: linear-gradient(to bottom, black 0%, black 78%, transparent 100%);
+            mask-image: linear-gradient(to bottom, black 0%, black 78%, transparent 100%);
+        }
+        .full.ftop {
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 22%, black 100%);
+            mask-image: linear-gradient(to bottom, transparent 0%, black 22%, black 100%);
+        }
+        .full.ftop.fbot {
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 22%, black 78%, transparent 100%);
+            mask-image: linear-gradient(to bottom, transparent 0%, black 22%, black 78%, transparent 100%);
+        }
+        .full::-webkit-scrollbar { display: none; }
+        .full p { margin: 0; font-size: 1.35rem; color: var(--text); line-height: 1.6; }
+        .totop {
+            position: absolute;
+            inset-block-start: 0.75rem;
+            inset-inline-end: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.25rem;
+            height: 2.25rem;
+            padding: 0;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            cursor: pointer;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .totop.show { opacity: 1; pointer-events: auto; }
+        .totop svg { width: 1.1rem; height: 1.1rem; }
+
+        .tobot {
+            position: absolute;
+            inset-block-end: 0.75rem;
+            inset-inline-end: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.25rem;
+            height: 2.25rem;
+            padding: 0;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            cursor: pointer;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .tobot.show { opacity: 1; pointer-events: auto; }
+        .tobot svg { width: 1.1rem; height: 1.1rem; }
+
+        .backlabel {
+            grid-row: 1;
+            grid-column: 1;
+            justify-self: start;
+            align-self: start;
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            color: var(--text);
+            visibility: visible;
+            pointer-events: none;
+        }
+
+        @media (max-width: 768px) {
+            .navbar { padding: 0 1.25rem; }
+            .navbar-menu a { font-size: 0.9rem; padding: 0.4rem 0.75rem; }
+            .main { padding: 3.75rem 3rem 3rem; gap: 1rem; }
+            .family { grid-template-columns: repeat(2, 1fr); gap: 1.4625rem; row-gap: 2.5rem; }
+            .tagline-block p { font-size: 1.6rem; }
+            .teaser, .full p { font-size: 1.2rem; }
+            .family-card { padding: 0.9rem; }
+        }
+
+        @media (max-width: 480px) {
+            body { grid-template-rows: auto 1fr; }
+            .masthead { grid-template-rows: auto auto; }
+            .navbar {
+                height: auto;
+                padding: 4% 4% 0;
+                flex-wrap: wrap;
+                row-gap: 0.5rem;
+            }
+            .navbar-logo { height: auto; max-height: 5.156rem; background: none; }
+            .brandrow {
+                display: grid;
+                grid-template-columns: auto 1fr;
+                background: rgba(15, 23, 42, 0.5);
+                background-clip: content-box;
+                padding: 4%;
+                width: 100%;
+            }
+            .navbar-menu {
+                background: none;
+                padding: 0;
+                display: grid;
+                grid-template-rows: repeat(3, 1fr);
+                justify-items: end;
+                height: 100%;
+                gap: 0;
+            }
+            .navbar-menu a { align-self: center; }
+            .navbar-menu a {
+                font-size: 0.7rem;
+                padding: 0.3rem 0.6rem;
+            }
+            .family { grid-template-columns: 1fr; gap: 2rem; }
+            .main { padding-top: 2rem; }
+            .face { padding: 1.25rem; }
+            .face.front h3 { font-size: clamp(0.855rem, 0.72rem + 1.8vw, 0.99rem); }
+            .backlabel { font-size: 1.35rem; }
+            .full p { font-size: 0.9rem; }
+            .tobot {
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.3s ease;
+            }
+            .tobot.show { opacity: 1; pointer-events: auto; }
+            .hero { padding: 4%; }
+            .tagline-block { padding: 4%; margin-left: 4%; }
+            .tagline-block p { font-size: clamp(0.8rem, 0.7rem + 1vw, 1rem); }
+            .tagline-block .t2 { display: block; }
+            .hero h1 { font-size: 1.75rem; }
+        }
+
+        @media (max-height: 720px) {
+            .masthead { grid-template-rows: 140px auto; }
+            .navbar { height: 140px; padding: 0 2rem; }
+            .navbar-logo { max-height: 140px; }
+            .navbar-menu a { font-size: 0.9rem; padding: 0.35rem 0.75rem; }
+            .main { padding: 1rem 2rem 0.75rem; gap: 0.75rem; }
+            .hero { gap: 0.2rem; }
+            .hero-brand { font-size: 0.7rem; }
+            .hero-tagline { font-size: 0.85rem; }
+            .family-card { padding: 0.7rem 0.8rem; gap: 0.25rem; }
+            .family-card h3 { font-size: 0.85rem; }
+            .family-card p { font-size: 0.75rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="masthead">
+        <div class="slide slide-1"></div>
+        <div class="slide slide-2"></div>
+    <nav class="navbar">
+        <div class="brandrow">
+        <img src="/assets/exosys.png" alt="ExoSystems" class="navbar-logo" />
+        <div class="navbar-menu">
+            <a href="/">Home</a>
+            <a href="https://exosystems.net/projects">Projects</a>
+            <a href="mailto:hello@exosystems.net">Contact</a>
+        </div>
+        </div>
+    </nav>
+
+        <section class="hero">
+            <div class="tagline-block">
+            <p><span class="t1">Hello, World! We're building something new.</span> <span class="t2">Private by design. Connected by nature.</span><span class="t-sub">... for the software was made for the man, not the man for the software!</span></p>
+            </div>
+        </section>
+    </header>
+
+    <main class="main">
+        <section class="family">
+            <div class="flip">
+                <div class="flip-box">
+                    <div class="face front">
+                        <div class="art">
+                            <img src="/assets/cards/exotalk.png" alt="ExoTalk"/>
+                        </div>
+                        <h3>ExoTalk</h3>
+                    </div>
+                    <div class="face back">
+                        <div class="full"><p>The Exosystem's flagship app: private, encrypted messaging that runs natively on your phone and desktop. It is your personal node on the network, carrying your identity and keeping every conversation peer to peer — connecting directly when possible and passing through blind relays only when it must. Every other Exosystem app unfolds inside it, arriving as subscriptions you manage in your settings, and it can even create and manage Conscia service nodes on your behalf. Because apps update through signed blueprints delivered over the mesh, the interface of everything you subscribe to evolves the moment its author publishes. Sign-ins, subscriptions, and app updates all flow through it, making one app the solid front door to the whole family.</p></div>
+                        <h3 class="backlabel">ExoTalk</h3>
+                        <button type="button" class="tobot" aria-label="Jump to bottom"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg></button>
+                        <button type="button" class="totop" aria-label="Back to top"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></button>
+                    </div>
+                </div>
+            </div>
+            <div class="flip">
+                <div class="flip-box">
+                    <div class="face front">
+                        <div class="art">
+                            <img src="/assets/cards/exosoul.png" alt="ExoSoul"/>
+                        </div>
+                        <h3>ExoSoul</h3>
+                    </div>
+                    <div class="face back">
+                        <div class="full"><p>The studio where every Exosystem app is authored — the press where each app is formed into a signed blueprint. One identity authors here; ExoTalk users subscribe, and the app unfolds on their devices with its interface driven by the blueprint, so a published change reaches every subscriber instantly. Every blueprint is a canonical app payload whose exact bytes are pinned by a digest, so what unfolds on a device is always precisely what was signed. Blueprints compose other blueprints only through digest-pinned includes with parent-owned overrides, keeping every app's lineage exact and verifiable. ExoSoul itself is a native app, and Conscia nodes host and relay its blueprints as a service.</p></div>
+                        <h3 class="backlabel">ExoSoul</h3>
+                        <button type="button" class="tobot" aria-label="Jump to bottom"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg></button>
+                        <button type="button" class="totop" aria-label="Back to top"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></button>
+                    </div>
+                </div>
+            </div>
+            <div class="flip">
+                <div class="flip-box">
+                    <div class="face front">
+                        <div class="art">
+                            <img src="/assets/cards/conscia.png" alt="Conscia"/>
+                        </div>
+                        <h3>Conscia</h3>
+                    </div>
+                    <div class="face back">
+                        <div class="full"><p>The lifeline of the Exosystem: always-on nodes that relay messages, discover peers, answer petitions, and keep data reachable while your devices are offline — opt-in helper services. Every node app runs peer to peer independently; when one is present it can carry relay, indexing, discovery, persistence, authentication, observability, and federation, routing geographically and by latency. Its relationship worker handles petitions, federation, and indexing while its operator console administers each node, in small, community, and large clustered flavors — with a large node planned at exosystems.net itself — and a Conscierge worker coordinates the nodes with one another and reaches beyond the mesh. Blind indexing can also surface community circles and public directories through one unified search surface.</p></div>
+                        <h3 class="backlabel">Conscia</h3>
+                        <button type="button" class="tobot" aria-label="Jump to bottom"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg></button>
+                        <button type="button" class="totop" aria-label="Back to top"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></button>
+                    </div>
+                </div>
+            </div>
+            <div class="flip">
+                <div class="flip-box">
+                    <div class="face front">
+                        <div class="art">
+                            <img src="/assets/cards/exonomy.png" alt="Exonomy"/>
+                        </div>
+                        <h3>Exonomy</h3>
+                    </div>
+                    <div class="face back">
+                        <div class="full"><p>Social voucher exchange. Members — Exonomists — mint and trade vouchers that stand for real goods and services, optionally bought or sold for everyday money; the voucher itself carries the value. It arrives as an app inside ExoTalk, and while its vouchers can optionally fund Exocracy tasks, it operates entirely independently by default — a fully realized ecosystem of structured value exchange. Native apps carry it onto phones and desktops for managing heavy voucher ledgers, and an indexing node hosts encrypted voucher payloads blindly, surfacing only the metadata its owners choose to publish.</p></div>
+                        <h3 class="backlabel">Exonomy</h3>
+                        <button type="button" class="tobot" aria-label="Jump to bottom"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg></button>
+                        <button type="button" class="totop" aria-label="Back to top"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></button>
+                    </div>
+                </div>
+            </div>
+            <div class="flip">
+                <div class="flip-box">
+                    <div class="face front">
+                        <div class="art">
+                            <img src="/assets/cards/exocracy.png" alt="Exocracy"/>
+                        </div>
+                        <h3>Exocracy</h3>
+                    </div>
+                    <div class="face back">
+                        <div class="full"><p>Transparent project governance — the governance layer of the mesh. Communities run projects with open proposals, votes, and milestones, funded with ordinary money or, optionally, Exonomy vouchers; that funding choice is engineered interoperability, and a project runs entirely on ordinary money when its manager prefers. Built for high-trust environments where organizational transparency and independent project management matter most, it connects with ExoTalk, Exonomy, and the rest of the family while standing entirely on its own. Native apps put real-time voting and task tracking in your pocket, and an indexing node keeps open tasks and bounties publicly searchable.</p></div>
+                        <h3 class="backlabel">Exocracy</h3>
+                        <button type="button" class="tobot" aria-label="Jump to bottom"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg></button>
+                        <button type="button" class="totop" aria-label="Back to top"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></button>
+                    </div>
+                </div>
+            </div>
+            <div class="flip">
+                <div class="flip-box">
+                    <div class="face front">
+                        <div class="art">
+                            <img src="/assets/cards/republet.png" alt="RepubLet"/>
+                        </div>
+                        <h3>RepubLet</h3>
+                    </div>
+                    <div class="face back">
+                        <div class="full"><p>Decentralized scientific publishing and peer review — a modern Republic of Letters, the knowledge ledger of the mesh. Researchers' work lives on permanent, hash-anchored records with cryptographically verifiable authorship, and author-facing paywalls offer a decentralized alternative to subscription platforms for earning from one's own findings — settled in ordinary money, cryptocurrency, or, optionally, Exonomy vouchers. A scientist who initiates an Exocracy project to manage and fund research is stringing together independent modular tools. Native apps carry reading and peer-review notifications onto phones and desktops, and a citation relay keeps open-science metadata publicly searchable.</p></div>
+                        <h3 class="backlabel">RepubLet</h3>
+                        <button type="button" class="tobot" aria-label="Jump to bottom"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg></button>
+                        <button type="button" class="totop" aria-label="Back to top"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></button>
+                    </div>
+                </div>
+            </div>
+            <div class="flip">
+                <div class="flip-box">
+                    <div class="face front">
+                        <div class="art">
+                            <img src="/assets/cards/threesteps.png" alt="ThreeSteps (3S)"/>
+                        </div>
+                        <h3>ThreeSteps (3S)</h3>
+                    </div>
+                    <div class="face back">
+                        <div class="full"><p>A private, offline-first social app for Catholic families and communities — helping children grow in faith through Baptism, First Communion, and Confirmation. Here social means relationships, guidance, and formation, and privacy means total discretion for those practicing in regions where faith requires it. Conversations connect directly when possible and pass through blind relays when they must, with local-first storage and cryptographic access control — so it keeps working through limited connectivity. Identity flows through ExoAuth, the family's shared identity layer, and missionaries, catechists, and parish groups meet the wider Exosystem through Conscia nodes.</p></div>
+                        <h3 class="backlabel">ThreeSteps (3S)</h3>
+                        <button type="button" class="tobot" aria-label="Jump to bottom"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg></button>
+                        <button type="button" class="totop" aria-label="Back to top"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></button>
+                    </div>
+                </div>
+            </div>
+            <div class="flip">
+                <div class="flip-box">
+                    <div class="face front">
+                        <div class="art">
+                            <img src="/assets/cards/internovel.png" alt="InterNovel"/>
+                        </div>
+                        <h3>InterNovel</h3>
+                    </div>
+                    <div class="face back">
+                        <div class="full"><p>Collaborative storytelling for young authors. Each writer's contributions are digitally signed — every paragraph permanently linked to the identity that wrote it — so authorship stays verifiable and intellectual property stays with its creator. Characters can travel between stories through the Travel Trunk, the Novel Spine holds each story's structure, and novels are written together under unanimous consent. Flexible collaboration, clear attribution, and protected ownership make it a writing home that grows with its authors, and each novel unfolds inside ExoTalk as one of the family's apps.</p></div>
+                        <h3 class="backlabel">InterNovel</h3>
+                        <button type="button" class="tobot" aria-label="Jump to bottom"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg></button>
+                        <button type="button" class="totop" aria-label="Back to top"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        document.querySelectorAll('.flip').forEach(function (card) {
+            var box = card.querySelector('.flip-box');
+            var full = card.querySelector('.full');
+            card.addEventListener('click', function () {
+                box.classList.toggle('flipped');
+            });
+            var btn = card.querySelector('.totop');
+            var botbtn = card.querySelector('.tobot');
+            if (full && btn) {
+                full.addEventListener('scroll', function () {
+                    btn.classList.toggle('show', full.scrollTop > 8);
+                    var scrollable = full.scrollHeight > full.clientHeight + 8;
+                    full.classList.toggle('ftop', scrollable && full.scrollTop > 8);
+                    full.classList.toggle('fbot', scrollable && full.scrollTop + full.clientHeight < full.scrollHeight - 8);
+                    if (botbtn) {
+                        botbtn.classList.toggle('show', scrollable && full.scrollTop + full.clientHeight < full.scrollHeight - 8);
+                    }
+                });
+                btn.addEventListener('click', function (ev) {
+                    ev.stopPropagation();
+                    full.scrollTo({ top: 0, behavior: 'smooth' });
+                    btn.classList.remove('show');
+                });
+            }
+            if (full && botbtn) {
+                botbtn.addEventListener('click', function (ev) {
+                    ev.stopPropagation();
+                    full.scrollTo({ top: full.scrollHeight, behavior: 'smooth' });
+                });
+            }
+            if (full) {
+                full.dispatchEvent(new Event('scroll'));
+                window.addEventListener('resize', function () {
+                    full.dispatchEvent(new Event('scroll'));
+                });
+            }
+        });
+    </script>
+
+</body>
+</html>
