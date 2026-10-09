@@ -17,7 +17,7 @@ use crate::store::{registry_rows, ModelRow};
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
         <!DOCTYPE html>
-        <html lang="en">
+        <html lang="en" data-appearance="system">
             <head>
                 <meta charset="utf-8"/>
                 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
@@ -35,21 +35,21 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
 }
 
 const CARDS: [(&str, &str, &str); 8] = [
-    ("ExoTalk", "/assets/cards/exotalk.png",
+    ("ExoTalk", "/cards/exotalk.png",
      "The Exosystem's flagship app: private, encrypted messaging that runs natively on your phone and desktop. It is your personal node on the network, carrying your identity and keeping every conversation peer to peer — connecting directly when possible and passing through blind relays only when it must. Every other Exosystem app unfolds inside it, arriving as subscriptions you manage in your settings, and it can even create and manage Conscia service nodes on your behalf. Because apps update through signed blueprints delivered over the mesh, the interface of everything you subscribe to evolves the moment its author publishes. Sign-ins, subscriptions, and app updates all flow through it, making one app the solid front door to the whole family."),
-    ("ExoSoul", "/assets/cards/exosoul.png",
+    ("ExoSoul", "/cards/exosoul.png",
      "The studio where every Exosystem app is authored — the press where each app is formed into a signed blueprint. One identity authors here; ExoTalk users subscribe, and the app unfolds on their devices with its interface driven by the blueprint, so a published change reaches every subscriber instantly. Every blueprint is a canonical app payload whose exact bytes are pinned by a digest, so what unfolds on a device is always precisely what was signed. Blueprints compose other blueprints only through digest-pinned includes with parent-owned overrides, keeping every app's lineage exact and verifiable. ExoSoul itself is a native app, and Conscia nodes host and relay its blueprints as a service."),
-    ("Conscia", "/assets/cards/conscia.png",
+    ("Conscia", "/cards/conscia.png",
      "The lifeline of the Exosystem: always-on nodes that relay messages, discover peers, answer petitions, and keep data reachable while your devices are offline — opt-in helper services. Every node app runs peer to peer independently; when one is present it can carry relay, indexing, discovery, persistence, authentication, observability, and federation, routing geographically and by latency. Its relationship worker handles petitions, federation, and indexing while its operator console administers each node, in small, community, and large clustered flavors — with a large node planned at exosystems.net itself — and a Conscierge worker coordinates the nodes with one another and reaches beyond the mesh. Blind indexing can also surface community circles and public directories through one unified search surface."),
-    ("Exonomy", "/assets/cards/exonomy.png",
+    ("Exonomy", "/cards/exonomy.png",
      "Social voucher exchange. Members — Exonomists — mint and trade vouchers that stand for real goods and services, optionally bought or sold for everyday money; the voucher itself carries the value. It arrives as an app inside ExoTalk, and while its vouchers can optionally fund Exocracy tasks, it operates entirely independently by default — a fully realized ecosystem of structured value exchange. Native apps carry it onto phones and desktops for managing heavy voucher ledgers, and an indexing node hosts encrypted voucher payloads blindly, surfacing only the metadata its owners choose to publish."),
-    ("Exocracy", "/assets/cards/exocracy.png",
+    ("Exocracy", "/cards/exocracy.png",
      "Transparent project governance — the governance layer of the mesh. Communities run projects with open proposals, votes, and milestones, funded with ordinary money or, optionally, Exonomy vouchers; that funding choice is engineered interoperability, and a project runs entirely on ordinary money when its manager prefers. Built for high-trust environments where organizational transparency and independent project management matter most, it connects with ExoTalk, Exonomy, and the rest of the family while standing entirely on its own. Native apps put real-time voting and task tracking in your pocket, and an indexing node keeps open tasks and bounties publicly searchable."),
-    ("RepubLet", "/assets/cards/republet.png",
+    ("RepubLet", "/cards/republet.png",
      "Decentralized scientific publishing and peer review — a modern Republic of Letters, the knowledge ledger of the mesh. Researchers' work lives on permanent, hash-anchored records with cryptographically verifiable authorship, and author-facing paywalls offer a decentralized alternative to subscription platforms for earning from one's own findings — settled in ordinary money, cryptocurrency, or, optionally, Exonomy vouchers. A scientist who initiates an Exocracy project to manage and fund research is stringing together independent modular tools. Native apps carry reading and peer-review notifications onto phones and desktops, and a citation relay keeps open-science metadata publicly searchable."),
-    ("ThreeSteps (3S)", "/assets/cards/threesteps.png",
+    ("ThreeSteps (3S)", "/cards/threesteps.png",
      "A private, offline-first social app for Catholic families and communities — helping children grow in faith through Baptism, First Communion, and Confirmation. Here social means relationships, guidance, and formation, and privacy means total discretion for those practicing in regions where faith requires it. Conversations connect directly when possible and pass through blind relays when they must, with local-first storage and cryptographic access control — so it keeps working through limited connectivity. Identity flows through ExoAuth, the family's shared identity layer, and missionaries, catechists, and parish groups meet the wider Exosystem through Conscia nodes."),
-    ("InterNovel", "/assets/cards/internovel.png",
+    ("InterNovel", "/cards/internovel.png",
      "Collaborative storytelling for young authors. Each writer's contributions are digitally signed — every paragraph permanently linked to the identity that wrote it — so authorship stays verifiable and intellectual property stays with its creator. Characters can travel between stories through the Travel Trunk, the Novel Spine holds each story's structure, and novels are written together under unanimous consent. Flexible collaboration, clear attribution, and protected ownership make it a writing home that grows with its authors, and each novel unfolds inside ExoTalk as one of the family's apps."),
 ];
 
@@ -118,15 +118,18 @@ fn FloatingGadgets(identity: Resource<Option<IdentityState>>) -> impl IntoView {
     let (width, set_width) = signal("normal".to_string());
     try_load_browser_settings(&set_appearance, &set_width);
     let apply = apply_display(appearance, width);
+    let _ = Effect::new(move |_| {
+        apply_browser_settings(&appearance.get(), &width.get());
+    });
 
     view! {
+        
         <div class="navbar">
             <div class="brandrow">
             <img src="/exosys.png" alt="ExoSystems" class="navbar-logo"/>
             <div class="navbar-menu">
                 {move || identity.get().flatten().filter(|id| id.model_updates).map(|_| view! { <A href="/models">"Models"</A> })}
                 <A href="/settings">"Settings"</A>
-                <DisplayGadgets appearance=appearance set_appearance=set_appearance width=width set_width=set_width apply=apply.clone()/>
                 {move || match identity.get().flatten() {
                     Some(id) => view! {
                         <span class="chip-wrap">
@@ -155,6 +158,10 @@ fn FloatingGadgets(identity: Resource<Option<IdentityState>>) -> impl IntoView {
             </div>
             </div>
         </div>
+        <div class="carousel-tools">
+            <DisplayGadgets appearance=appearance set_appearance=set_appearance width=width set_width=set_width apply=apply/>
+        </div>
+        
     }
 }
 
@@ -314,7 +321,15 @@ fn FlipCard(title: &'static str, art: &'static str, full: &'static str) -> impl 
     };
 
     view! {
-        <div class="flip" on:click=move |_| set_flipped.set(!flipped.get())>
+        <div class="flip" on:click=move |_| {
+            set_flipped.set(!flipped.get());
+            if let Some(el) = full_ref.get() {
+                #[cfg(target_arch = "wasm32")]
+                if let Ok(ev) = web_sys::Event::new("scroll") {
+                    let _ = el.dispatch_event(&ev);
+                }
+            }
+        }>
             <div class="flip-box" class:flipped=move || flipped.get()>
                 <div class="face front">
                     <div class="art">
@@ -342,20 +357,35 @@ fn FlipCard(title: &'static str, art: &'static str, full: &'static str) -> impl 
 }
 
 #[component]
-fn ModelsNavbar(show_models: bool, display_name: String) -> impl IntoView {
+/// The models page carries its own solid top navigation bar with the
+/// gadgetry and no carousel. Sign-in runs only on the main page; this
+/// route recognizes the main-page session instead of running its own.
+/// The current route never lists a menu item pointing to itself.
+fn ModelsNavbar(show_models: bool, display_name: String, current: &'static str) -> impl IntoView {
     let (appearance, set_appearance) = signal("system".to_string());
     let (width, set_width) = signal("normal".to_string());
     try_load_browser_settings(&set_appearance, &set_width);
     let apply = apply_display(appearance, width);
+    let _ = Effect::new(move |_| {
+        apply_browser_settings(&appearance.get(), &width.get());
+    });
     view! {
         <nav class="navbar navbar-solid">
             <img src="/exosys.png" alt="ExoSystems" class="navbar-logo"/>
             <div class="navbar-menu">
                 <A href="/">"Home"</A>
-                {show_models.then(|| view! { <A href="/models">"Models"</A> })}
-                <A href="/settings">"Settings"</A>
-                {if display_name.is_empty() { view! { <A href="/signin">"Sign in"</A> }.into_any() } else { view! { <span class="chip-name">{display_name}</span> }.into_any() }}
-                <DisplayGadgets appearance=appearance set_appearance=set_appearance width=width set_width=set_width apply=apply/>
+                {show_models.then(|| if current != "models" {
+                    view! { <A href="/models">"Models"</A> }.into_any()
+                } else { view! {}.into_any() })}
+                {if current != "settings" {
+                    view! { <A href="/settings">"Settings"</A> }.into_any()
+                } else { view! {}.into_any() }}
+                {if display_name.is_empty() {
+                    if current != "signin" {
+                        view! { <A href="/signin">"Sign in"</A> }.into_any()
+                    } else { view! {}.into_any() }
+                } else { view! { <span class="chip-name">{display_name}</span> }.into_any() }}
+                <DisplayGadgets appearance=appearance set_appearance=set_appearance width=width set_width=set_width apply=apply.clone()/>
             </div>
         </nav>
     }
@@ -425,7 +455,7 @@ fn SigninPage() -> impl IntoView {
     });
 
     view! {
-        <ModelsNavbar show_models=false display_name=String::new()/>
+        <ModelsNavbar show_models=false display_name=String::new() current="signin"/>
         <main class="main page-main">
             <header class="page-head">
                 <h1>"Sign in."</h1>
@@ -525,7 +555,7 @@ fn DocsPage() -> impl IntoView {
             {move || {
                 let named = models_gate.get().flatten().map(|v| (v.model_updates, v.did)).unwrap_or((false, String::new()));
                 view! {
-                    <ModelsNavbar show_models=named.0 display_name=named.1/>
+                    <ModelsNavbar show_models=named.0 display_name=named.1 current="docs"/>
                     <main class="main page-main">
                         <header class="page-head">
                             <h1>"Docs."</h1>
@@ -599,7 +629,7 @@ fn ModelsPage() -> impl IntoView {
                 Some(v) if v.model_updates => {
                     let name = v.did.clone();
                     view! {
-                        <ModelsNavbar show_models=true display_name=name/>
+                        <ModelsNavbar show_models=true display_name=name current="models"/>
                         <main class="main page-main">
                             <section class="runs"><h2>"Runs"</h2></section>
                             <section class="models">
@@ -610,7 +640,7 @@ fn ModelsPage() -> impl IntoView {
                     }.into_any()
                 }
                 _ => view! {
-                    <ModelsNavbar show_models=false display_name=String::new()/>
+                    <ModelsNavbar show_models=false display_name=String::new() current="models"/>
                     <main class="main page-main"><p><A href="/signin">"Sign in with a delegated identity to read the registry."</A></p></main>
                 }.into_any(),
             })}
@@ -812,6 +842,9 @@ fn SettingsPage() -> impl IntoView {
     try_load_browser_settings(&set_appearance, &set_width);
 
     let apply = apply_display(appearance, width);
+    let _ = Effect::new(move |_| {
+        apply_browser_settings(&appearance.get(), &width.get());
+    });
     let server_settings = Resource::new(
         || (),
         |_| async move {
@@ -903,7 +936,7 @@ fn SettingsPage() -> impl IntoView {
                     let did = v.did.clone();
                     let named = (v.model_updates, v.did.clone());
                     view! {
-                        <ModelsNavbar show_models=named.0 display_name=named.1/>
+<ModelsNavbar show_models=named.0 display_name=named.1 current="settings"/>
                         <main class="main page-main">
                             <header class="page-head">
                                 <div class="head-row">
@@ -1011,7 +1044,7 @@ fn SettingsPage() -> impl IntoView {
                     }.into_any()
                 }
                 None => view! {
-                    <ModelsNavbar show_models=false display_name=String::new()/>
+                    <ModelsNavbar show_models=false display_name=String::new() current="settings"/>
                     <main class="main page-main">
                         <header class="page-head">
                             <h1>"Settings."</h1>
