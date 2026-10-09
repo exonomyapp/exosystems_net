@@ -5,7 +5,7 @@ failing site and its repair, the publishing pipeline foundations, the
 UI library trials (mine plus two subagent workstreams), the decision
 log, and the design direction. Evidence lives in the trial bench at
 `/home/exocrat/code/leptos-ui-trials/` and the decision log in
-`decisions/`.
+`docs/decisions/`.
 
 ## 1. The site was down — repaired
 
@@ -32,7 +32,7 @@ proposals awaiting approval.
   tool 0.3.9 installed and working. The Tencent box has no Rust
   toolchain (prep never ran) — and needs none: it keeps serving
   files and proxying to app services.
-- Direction (owner-decided, recorded in `decisions/`): Leptos 0.8
+- Direction (owner-decided, recorded in `docs/decisions/`): Leptos 0.8
   with server rendering. Pages will be built per signed-in user from
   synced content; static files cannot do that.
 
@@ -61,7 +61,7 @@ Proven (compile + render, exit 0):
   render (one-line randomness setting required). Wrapper rejected
   (ships a dev audit tool as a required piece). In reserve.
 
-Out, value banked (fix or revival cost recorded in `decisions/`):
+Out, value banked (fix or revival cost recorded in `docs/decisions/`):
 - Thaw 0.5.0-beta — server build overflows the compiler's depth
   limit on the current toolchain; older-Leptos retest blocked (old
   Leptos predates the compiler).
@@ -77,7 +77,7 @@ cover for each other — isolate before judging.
 
 ## 4. Decision log (strict ADR format)
 
-`decisions/` follows the upstream ADR repository's prescriptions
+`docs/decisions/` follows the upstream ADR repository's prescriptions
 verbatim: Nygard shape (Title, Status, Context, Decision,
 Consequences) by default, MADR shape (header fields, drivers,
 options list, outcome with positive/negative consequences, per-option
@@ -136,7 +136,7 @@ Finding from the knowledge store: no recent session has a plain node running sou
 
 Sessions that carried this lane, newest first, with what each settled:
 
-- `opencode/ses_f20f06203ffegA6kLlCbX4l4tZ` (2026-09-26 to 2026-09-27): wrote the node decision records in `decisions/`. `run-full-conscia-node-on-exosystems-net.md` (Proposed) supersedes the earlier minimal draft: SQLite for all node state, full Willow service for persistence and sync, Iroh links, full federation protocol, a conscire endpoint for outside apps, plus indexing, discovery, persistence, sign-in checks, metrics, and federation behavior. Owner correction recorded in history: the node keeps the full Willow service for holding and syncing persisted data; limits on the node's scope are not set by the implementer. Companion records: `exosystems-exoauth.md` (sign-in offers present-an-existing-identity or generate-a-new-one, session ticket gates per-user pages, consciring follows the present-identity / owner-approves / node-records-capability / client-keeps-relay steps), `prove-secret-ownership-at-sign-in.md` (challenge-response with the identity secret before allowlist check), `recover-and-move-exotalk-profile-across-devices.md` (encrypted profile bundle carrying identity plus node configurations; fresh consciring per device).
+- `opencode/ses_f20f06203ffegA6kLlCbX4l4tZ` (2026-09-26 to 2026-09-27): wrote the node decision records in `docs/decisions/`. `run-full-conscia-node-on-exosystems-net.md` (Proposed) supersedes the earlier minimal draft: SQLite for all node state, full Willow service for persistence and sync, Iroh links, full federation protocol, a conscire endpoint for outside apps, plus indexing, discovery, persistence, sign-in checks, metrics, and federation behavior. Owner correction recorded in history: the node keeps the full Willow service for holding and syncing persisted data; limits on the node's scope are not set by the implementer. Companion records: `exosystems-exoauth.md` (sign-in offers present-an-existing-identity or generate-a-new-one, session ticket gates per-user pages, consciring follows the present-identity / owner-approves / node-records-capability / client-keeps-relay steps), `prove-secret-ownership-at-sign-in.md` (challenge-response with the identity secret before allowlist check), `recover-and-move-exotalk-profile-across-devices.md` (encrypted profile bundle carrying identity plus node configurations; fresh consciring per device).
 - `opencode/ses_f20ecff6cffeqKhSSQiEz8RfB1` plus the `ses_f208620*` cluster (2026-09-26): grounded the ExoAuth definitions from history (single identity system; ExoTalk as the app that creates apps; Conscia as helper node; consciring as the cryptographic link) and re-verified the satisfaction test: sign-in gates the docs view through identity, node, and synced storage, owner identity first, then a second approved identity.
 - `opencode/ses_f2236e95affe1URgV9VxMIjbXM` with `ses_f222501f9ffewJo8lwkhMnIe2B`, `ses_f22266e1dffedpjLL29LL6YcHm`, `ses_f2224aa48ffeTDG5Ni2o5igDmL`, `ses_f222484eeffePtXkjScqZbgMtq` (2026-09-26): owner direction that starts this lane. The full ExoMetro suite (multi-machine database cluster with three distinct database roles, event bus, tunnel, operator console) does not fit the 2 GB instance, so the plain node goes first by hand: helper daemon plus its synced data folder (Willow store), with the gated docs view as the satisfaction test. Same sessions confirm the Leptos 0.8 server-rendered site as the host and ExoAuth signup/signin as the first site upgrade.
 - `opencode/ses_f3bc9aaeeffeQ4XmPIr7F2htq9` (2026-09-22 to 2026-09-24): wrote `exotalk/docs/plans/lighthouse.md` (instance provisioning: base OS, Rust/WebAssembly toolchain, Node, Python, OpenCode, Hermes, exo-mcp resources, persistence pointed at the future database cluster) and `exotalk/docs/plans/conscia-to-exosystems-net.md` (Draft full ExoMetro deployment: orchestration cluster, three-role database topology, event bus, dormant tunnel, daemon at `/opt/exo/conscia/conscia` as `conscia.service`, operator console, identity binding, phased rollout with health and conscire checks). Same session brought `https://chat.exosystems.net/login` to 200 through a fresh certificate with the Hermes dashboard behind nginx.
@@ -145,4 +145,4 @@ Sessions that carried this lane, newest first, with what each settled:
 
 Current state: specified, not running. Decision records Proposed; no node daemon, conscire endpoint, or sync check passes on the instance. The website and ExoAuth lanes travel with this lane to the same finish line: site per-user pages, working sign-in flow, plain node on the instance, local synced store, local ExoTalk conscired and syncing, gated docs as proof.
 
-Continue, in order: provision the plain node on the instance by hand per `decisions/run-full-conscia-node-on-exosystems-net.md` (helper identity, Willow store, SQLite state, Iroh links, conscire endpoint); stand up the local synced store; conscire the local ExoTalk build with the instance node and prove sync; run the gated-docs satisfaction test for the owner identity, then a second approved identity. Sources: exokb history (queries above, knowledge store at `/home/exocrat/.local/share/exokb/exokb.db`), `exotalk/docs/plans/lighthouse.md`, `exotalk/docs/plans/conscia-to-exosystems-net.md`, `exotalk/docs/plans/conscia_delivery.md`, `decisions/`.
+Continue, in order: provision the plain node on the instance by hand per `docs/decisions/run-full-conscia-node-on-exosystems-net.md` (helper identity, Willow store, SQLite state, Iroh links, conscire endpoint); stand up the local synced store; conscire the local ExoTalk build with the instance node and prove sync; run the gated-docs satisfaction test for the owner identity, then a second approved identity. Sources: exokb history (queries above, knowledge store at `/home/exocrat/.local/share/exokb/exokb.db`), `exotalk/docs/plans/lighthouse.md`, `exotalk/docs/plans/conscia-to-exosystems-net.md`, `exotalk/docs/plans/conscia_delivery.md`, `docs/decisions/`.

@@ -8,6 +8,10 @@ between them are the way they are.
 
 | Record | Status | Date |
 |--------|--------|------|
+| [Migrate the Alibaba Singapore instance off CentOS 7](migrate-alibaba-singapore-off-centos-7.md) | Proposed | 2026-10-09 |
+| [Deploy the ExoMetro node on the Alibaba Singapore instance](deploy-exometro-node-on-alibaba-singapore.md) | Proposed | 2026-10-09 |
+| [Implement hardening on the Alibaba Singapore instance](implement-hardening-on-alibaba-singapore.md) | Accepted | 2026-10-09 |
+| [Implement hardening on the Tencent Lighthouse instance](implement-hardening-on-tencent-lighthouse.md) | Accepted | 2026-10-09 |
 | [Shape the Settings page as the identity and mesh console](shape-settings-page-as-identity-and-mesh-console.md) | Proposed | 2026-10-09 |
 | [Application-layer notifications over Willow entries and Iroh gossip](application-layer-notifications-over-willow-gossip.md) | Proposed | 2026-10-08 |
 | [Deploy exo-mcp with DBOS and Postgres to Lighthouse](deploy-exo-mcp-with-dbos-and-postgres-to-lighthouse.md) | Proposed | 2026-10-02 |

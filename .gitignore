@@ -1,2 +1,7 @@
 /target/
 *.log
+
+# Operator-held secrets (never commit)
+secrets/*
+!secrets/.gitkeep
+docs/harden.md
