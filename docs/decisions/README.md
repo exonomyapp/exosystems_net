@@ -6,8 +6,6 @@ rewritten — new information arrives dated, replacements supersede.
 The log is the record of why the site, the node, and the sync
 between them are the way they are.
 
-| Record | Status | Date |
-|--------|--------|------|
 | Record | Status | Date | Deps |
 |--------|--------|------|------|
 | [Migrate the Alibaba Singapore instance off CentOS 7](migrate-alibaba-singapore-off-centos-7.md) | Proposed | 2026-10-09 |  |
