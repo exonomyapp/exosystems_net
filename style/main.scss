@@ -85,7 +85,6 @@
             justify-content: space-between;
             padding: 2.5rem 2.5rem 0;
             height: 216px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         }
 
         .navbar-logo {
@@ -316,7 +315,7 @@
             background: linear-gradient(to right, #443377 0%, #443377 66.666%, #44337700 100%);
             color: #f8fafc;
             padding: 0.75rem 0 0.75rem 2.5rem;
-            font-size: 1.8rem;
+            font-size: clamp(0.95rem, 0.7rem + 1.2vw, 1.8rem);
             line-height: 1.2;
             font-weight: 600;
             letter-spacing: -0.01em;
@@ -455,7 +454,7 @@
             justify-self: start;
             align-self: start;
             margin: 0;
-            font-size: 1.8rem;
+            font-size: clamp(0.9rem, 0.65rem + 1.1vw, 1.8rem);
             font-weight: 600;
             letter-spacing: -0.01em;
             color: var(--text);
@@ -584,9 +583,31 @@ th { background: var(--surface); }
     font-weight: 700;
     letter-spacing: -0.01em;
 }
+.navbar-solid .navbar-logo {
+    height: 2.6rem;
+    width: auto;
+    max-height: none;
+    padding: 0;
+    background: none;
+}
 .navbar-solid .navbar-menu {
     background: none;
     padding: 0.75rem 0;
+}
+.navbar-solid .navbar-menu a {
+    color: #dbe3ee;
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    padding: 0.4rem 0.8rem;
+    border-radius: var(--radius-sm);
+    transition: color 0.15s ease, background 0.15s ease;
+    white-space: nowrap;
+}
+.navbar-solid .navbar-menu a:hover {
+    color: #f8fafc;
+    background: rgba(255, 255, 255, 0.05);
 }
 
 /* Identity chip with display name, avatar, and switching dropdown. */
@@ -722,6 +743,29 @@ th { background: var(--surface); }
 .navbar .ctl:hover { color: #f8fafc; border-color: transparent; }
 .navbar .ctl.active { color: #93c5fd; background: none; border-color: transparent; }
 .navbar .ctl svg { width: 17px; height: 17px; }
+
+/* Theme drop: one visible icon button reveals the other two. */
+.icon-drop-wrap { position: relative; display: inline-flex; }
+.drop-backdrop { position: fixed; inset: 0; z-index: 30; }
+.icon-drop-panel { position: absolute; top: calc(100% + 0.35rem); right: 0; z-index: 31; display: grid; gap: 0.15rem; padding: 0.35rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: 0 10px 30px rgba(2, 6, 23, 0.45); }
+.icon-drop-panel .ctl { color: var(--text-muted); border-color: var(--border); }
+.icon-drop-panel .ctl:hover { color: var(--accent); border-color: var(--accent); }
+.navbar .icon-drop-panel .ctl { width: 1.75rem; height: 1.75rem; color: var(--text-muted); border-color: var(--border); background: none; }
+.navbar .icon-drop-panel .ctl:hover { color: var(--accent); border-color: var(--accent); }
+.navbar .icon-drop-panel .ctl svg { width: 15px; height: 15px; }
+
+/* Gadget buttons inside cards keep gadget styling, not action-button styling. */
+.family-card button.ctl { width: 1.75rem; height: 1.75rem; padding: 0; font-weight: 400; color: var(--text-muted); background: none; border: 1px solid var(--border); }
+.family-card button.ctl:hover { color: var(--text); border-color: var(--accent); filter: none; }
+.family-card button.ctl.active { color: var(--bg); background: var(--accent); border-color: var(--accent); }
+
+/* Page-head secondary buttons (sign out). */
+.page-head button { font: inherit; font-size: 0.95rem; font-weight: 600; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.45rem 0.9rem; cursor: pointer; }
+.page-head button:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Chip dropdown links must read on the panel surface, not inherit the
+   light-on-dark masthead link color. */
+.navbar-menu .chip-dropdown a { color: var(--text); }
 
 /* Chip dropdown: absolutely positioned panel for readability. */
 .chip-wrap { position: relative; display: inline-grid; }

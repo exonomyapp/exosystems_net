@@ -124,7 +124,6 @@ fn FloatingGadgets(identity: Resource<Option<IdentityState>>) -> impl IntoView {
             <div class="brandrow">
             <img src="/exosys.png" alt="ExoSystems" class="navbar-logo"/>
             <div class="navbar-menu">
-                <A href="/">"Home"</A>
                 {move || identity.get().flatten().filter(|id| id.model_updates).map(|_| view! { <A href="/models">"Models"</A> })}
                 <A href="/settings">"Settings"</A>
                 <DisplayGadgets appearance=appearance set_appearance=set_appearance width=width set_width=set_width apply=apply.clone()/>
@@ -159,6 +158,86 @@ fn FloatingGadgets(identity: Resource<Option<IdentityState>>) -> impl IntoView {
     }
 }
 
+fn theme_icon(v: &str) -> &'static str {
+    match v {
+        "light" => ICON_SUN,
+        "dark" => ICON_MOON,
+        _ => ICON_MONITOR,
+    }
+}
+
+fn theme_label(v: &str) -> &'static str {
+    match v {
+        "light" => "Light theme",
+        "dark" => "Dark theme",
+        _ => "System theme",
+    }
+}
+
+#[component]
+fn ThemeDrop(
+    appearance: ReadSignal<String>,
+    set_appearance: WriteSignal<String>,
+    apply: impl Fn() + Clone + Send + 'static,
+) -> impl IntoView {
+    let (drop_open, set_drop_open) = signal(false);
+    let apply_panel = apply;
+    view! {
+        <span class="icon-drop-wrap">
+            <button type="button" class="ctl"
+                title=move || theme_label(&appearance.get())
+                aria-label=move || theme_label(&appearance.get())
+                on:click=move |_| set_drop_open.set(!drop_open.get())>
+                <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true">
+                    <path d=move || theme_icon(&appearance.get())/>
+                </svg>
+            </button>
+            {move || drop_open.get().then(|| {
+                let current = appearance.get();
+                view! {
+                    <span class="drop-backdrop" on:click=move |_| set_drop_open.set(false)></span>
+                    <span class="icon-drop-panel">
+                        {["system", "light", "dark"].into_iter().filter(move |v| *v != current).map(|v| {
+                            let a = apply_panel.clone();
+                            view! {
+                                <button type="button" class="ctl"
+                                    title=theme_label(v) aria-label=theme_label(v)
+                                    on:click=move |_| {
+                                        set_appearance.set(v.to_string());
+                                        a();
+                                        set_drop_open.set(false);
+                                    }>
+                                    <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true">
+                                        <path d=theme_icon(v)/>
+                                    </svg>
+                                </button>
+                            }
+                        }).collect::<Vec<_>>()}
+                    </span>
+                }
+            })}
+        </span>
+    }
+}
+
+#[component]
+fn WidthToggle(
+    width: ReadSignal<String>,
+    set_width: WriteSignal<String>,
+    apply: impl Fn() + Clone + Send + 'static,
+) -> impl IntoView {
+    view! {
+        <button type="button" class="ctl" class:active=move || width.get() == "wide"
+            title=move || if width.get() == "wide" { "Fit to margins" } else { "Full width" }
+            aria-label=move || if width.get() == "wide" { "Fit to margins" } else { "Full width" }
+            on:click=move |_| { set_width.set(if width.get() == "wide" { "normal".into() } else { "wide".into() }); apply(); }>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+                <path d=ICON_WIDTH/>
+            </svg>
+        </button>
+    }
+}
+
 #[component]
 fn DisplayGadgets(
     appearance: ReadSignal<String>,
@@ -167,41 +246,12 @@ fn DisplayGadgets(
     set_width: WriteSignal<String>,
     apply: impl Fn() + Clone + Send + 'static,
 ) -> impl IntoView {
-    let apply1 = apply.clone();
-    let apply2 = apply.clone();
-    let apply3 = apply.clone();
-    let apply4 = apply;
+    let apply_theme = apply.clone();
+    let apply_width = apply;
     view! {
         <span class="gadget-row">
-            <button type="button" class="ctl" class:active=move || appearance.get() == "system"
-                title="System theme" aria-label="System theme"
-                on:click=move |_| { set_appearance.set("system".into()); apply1(); }>
-                <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true">
-                    <path d=ICON_MONITOR/>
-                </svg>
-            </button>
-            <button type="button" class="ctl" class:active=move || appearance.get() == "light"
-                title="Light theme" aria-label="Light theme"
-                on:click=move |_| { set_appearance.set("light".into()); apply2(); }>
-                <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true">
-                    <path d=ICON_SUN/>
-                </svg>
-            </button>
-            <button type="button" class="ctl" class:active=move || appearance.get() == "dark"
-                title="Dark theme" aria-label="Dark theme"
-                on:click=move |_| { set_appearance.set("dark".into()); apply3(); }>
-                <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true">
-                    <path d=ICON_MOON/>
-                </svg>
-            </button>
-            <button type="button" class="ctl" class:active=move || width.get() == "wide"
-                title=move || if width.get() == "wide" { "Fit to margins" } else { "Full width" }
-                aria-label=move || if width.get() == "wide" { "Fit to margins" } else { "Full width" }
-                on:click=move |_| { set_width.set(if width.get() == "wide" { "normal".into() } else { "wide".into() }); apply4(); }>
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
-                    <path d=ICON_WIDTH/>
-                </svg>
-            </button>
+            <ThemeDrop appearance=appearance set_appearance=set_appearance apply=apply_theme/>
+            <WidthToggle width=width set_width=set_width apply=apply_width/>
         </span>
     }
 }
@@ -217,7 +267,7 @@ fn HomePage() -> impl IntoView {
                     <FloatingGadgets identity=identity/>
             <section class="hero">
                 <div class="tagline-block">
-                    <p><span class="t1">"Hello, World! We're building something new."</span> <span class="t2">"Private by design. Connected by nature."</span><span class="t-sub">"... for the software was made for the man, not the man for the software!"</span></p>
+                    <p><span class="t1">"Hello, World! We're building something new."</span>{" "}<span class="t2">"Private by design. Connected by nature."</span><span class="t-sub">"... for the software was made for the man, not the man for the software!"</span></p>
                 </div>
             </section>
         </header>
@@ -299,7 +349,7 @@ fn ModelsNavbar(show_models: bool, display_name: String) -> impl IntoView {
     let apply = apply_display(appearance, width);
     view! {
         <nav class="navbar navbar-solid">
-            <span class="navbar-brand">"ExoSystems"</span>
+            <img src="/exosys.png" alt="ExoSystems" class="navbar-logo"/>
             <div class="navbar-menu">
                 <A href="/">"Home"</A>
                 {show_models.then(|| view! { <A href="/models">"Models"</A> })}
@@ -869,7 +919,15 @@ fn SettingsPage() -> impl IntoView {
                             <section class="page-cards">
                                 <div class="family-card">
                                     <h3>"Display"</h3>
-                                    <DisplayGadgets appearance=appearance set_appearance=set_appearance width=width set_width=set_width apply=apply.clone()/>
+                                    <p>"Appearance follows the system or forces light or dark; content width fits the margins or fills the screen. Choices persist in browser storage and sync to the identity's namespace while signed in."</p>
+                                    <div class="field">
+                                        <label>"Appearance"</label>
+                                        <ThemeDrop appearance=appearance set_appearance=set_appearance apply=apply.clone()/>
+                                    </div>
+                                    <div class="field">
+                                        <label>"Content width"</label>
+                                        <WidthToggle width=width set_width=set_width apply=apply.clone()/>
+                                    </div>
                                 </div>
                                 <div class="family-card">
                                     <h3>"Profile"</h3>
@@ -961,7 +1019,15 @@ fn SettingsPage() -> impl IntoView {
                         <section class="page-cards">
                             <div class="family-card">
                                 <h3>"Display"</h3>
-                                <DisplayGadgets appearance=appearance set_appearance=set_appearance width=width set_width=set_width apply=apply.clone()/>
+                                <p>"Appearance follows the system or forces light or dark; content width fits the margins or fills the screen. Choices persist in browser storage for this browser."</p>
+                                <div class="field">
+                                    <label>"Appearance"</label>
+                                    <ThemeDrop appearance=appearance set_appearance=set_appearance apply=apply.clone()/>
+                                </div>
+                                <div class="field">
+                                    <label>"Content width"</label>
+                                    <WidthToggle width=width set_width=set_width apply=apply.clone()/>
+                                </div>
                             </div>
                         </section>
                         <p><A href="/signin">"Go to sign in"</A></p>

@@ -8,6 +8,7 @@ between them are the way they are.
 
 | Record | Status | Date |
 |--------|--------|------|
+| [Shape the Settings page as the identity and mesh console](shape-settings-page-as-identity-and-mesh-console.md) | Proposed | 2026-10-09 |
 | [Application-layer notifications over Willow entries and Iroh gossip](application-layer-notifications-over-willow-gossip.md) | Proposed | 2026-10-08 |
 | [Deploy exo-mcp with DBOS and Postgres to Lighthouse](deploy-exo-mcp-with-dbos-and-postgres-to-lighthouse.md) | Proposed | 2026-10-02 |
 | [Install nexo-rs on Lighthouse](install-nexo-rs-on-lighthouse.md) | Proposed | 2026-10-02 |
