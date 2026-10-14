@@ -1,11 +1,32 @@
+/* ============================================================================
+         * UI DESIGN PHILOSOPHY — Grid-Centric Responsive Layout
+         *
+         * Invariants that hold on every platform we ship (web, Compose, SwiftUI,
+         * WinUI 3, GTK4), because only the web target can execute literal CSS:
+         *
+         *   1. GRID DOMINANCE. Two nested grids for an app shell — a page-shell
+         *      grid and an inner panel grid. One-way stacking (flexbox) is
+         *      reserved for true single-axis content flow. Nothing structural
+         *      is positioned by absolute offsets; overlays only.
+         *   2. NO FIXED TYPE. Every font size is a relative unit. Type grows
+         *      continuously with the window and with browser zoom; nothing
+         *      jumps at a breakpoint. All sizes share one modular ladder.
+         *   3. PROPORTIONAL IN UNISON. Sizes derive from a single fluid root,
+         *      so every element keeps its ratio to every other at any width
+         *      or zoom level.
+         *   4. NEVER A HORIZONTAL SCROLLBAR. The interface always fits the
+         *      width of the window it sits in. Every scrollable track is
+         *      minmax(0, 1fr) so content can never outgrow its track.
+         *   5. WIDTH-DERIVED COLUMNS. Column count comes from the width
+         *      available to the grid, never from the device identity or the
+         *      window orientation. Orientation is therefore handled by
+         *      consequence, with no orientation rule anywhere.
+         *   6. CARD HEIGHT IS ITS SQUARENESS. Card height follows card width
+         *      through the aspect ratio alone.
+         *
+         * Type ladder: a single modular scale of ratio 1.2 on the fluid root.
+         * ============================================================================ */
 
-        /* UI DESIGN PRINCIPLE: The entire UI design must align with maximal CSS Grid
-         * implementation for layout and positioning. All layout and positioning decisions
-         * must use CSS Grid features (grid-template, grid-area, justify-self, align-self,
-         * gap, container query units, etc.) rather than absolute positioning or fixed
-         * offsets. Absolute positioning is reserved for overlay elements that must escape
-         * the grid flow (e.g., scroll buttons), and even then, grid alignment should be
-         * preferred where possible. */
         :root {
             --bg: #f3f4f7;
             --surface: #ffffff;
@@ -16,19 +37,75 @@
             --accent: #1f5fc4;
             --accent-soft: #dbe7fb;
             --nav-bg: #14161a;
-            --radius-sm: 6px;
-            --radius: 8px;
+            --radius-sm: 0.375rem;
+            --radius: 0.5rem;
+
+            /* Modular type scale, ratio 1.2. Each step is a pure multiple of the
+             * fluid root, so the whole ladder scales as one when the root does. */
+            --fs-2: 0.833rem;
+            --fs-1: 1rem;
+            --fs0: 1.2rem;
+            --fs1: 1.44rem;
+            --fs2: 1.728rem;
+            --fs3: 2.0736rem;
+            --fs4: 2.4883rem;
+
+            /* Spacing ladder, same ratio as the type so that gaps never detach
+             * from the text they separate. */
+            --sp-2: 0.208rem;
+            --sp-1: 0.25rem;
+            --sp0: 0.3rem;
+            --sp1: 0.36rem;
+            --sp2: 0.432rem;
+            --sp3: 0.518rem;
+            --sp4: 0.622rem;
+            --sp5: 0.747rem;
+            --sp6: 0.896rem;
+            --sp7: 1.075rem;
+
+            /* Interior chrome */
+            --gutter: 1.75rem;
+            --pad-block: 0.896rem;
+            --pad-inline: 1.075rem;
+            --measure: 90rem;
+            --card-floor: 18rem;
+
+            /* Distance the interface keeps from the window edge. Every surface
+             * that meets the edge of the window uses this, so nothing ever
+             * sits flush against it and the rhythm stays the same everywhere. */
+            --edge: 2.4883rem;
+            --gap-page: 3.4rem;
+
+            /* The logo artwork carries transparent margin on its left, so its
+             * visible edge sits further in than its box. Every object that must
+             * align to the logo aligns to the visible edge, not the box. */
+            --logo-h: clamp(3.5rem, 13cqi, 9rem);
+            --logo-blind: 0.4269;
+
+            /* Display gadgets */
+            --ctl: 2.5rem;
+            --ctl-icon: 1.375rem;
+            --ctl-gap: 0.518rem;
+            --ctl-radius: 0.622rem;
         }
 
         *, *::before, *::after { box-sizing: border-box; }
 
-        html { font-size: clamp(13px, 11px + 0.5vw, 18px); }
+        /* The one fluid value the entire interface scales from. The bounds are
+         * relative units, not pixels, so a viewer's own preferred text size
+         * still moves them. The middle term adds viewport width to a relative
+         * base, which is what keeps browser zoom working: zooming narrows the
+         * viewport the layout is solved against, so type and layout resolve
+         * together instead of type stalling at a pixel ceiling. */
+        html { font-size: clamp(0.75rem, 0.55rem + 1.1vw, 1.25rem); }
 
         html, body {
             margin: 0;
             padding: 0;
-            min-height: 100%;
             width: 100%;
+            /* The interface always fits the window it sits in. Content too wide
+             * for its track is contained by the grid, never by page scroll. */
+            overflow-x: clip;
         }
 
         body {
@@ -39,46 +116,53 @@
             line-height: 1.5;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+
+            /* GRID A — page shell. Two rows: the masthead, then the content. */
             display: grid;
-            grid-template-rows: auto 1fr;
+            grid-template-rows: auto minmax(0, 1fr);
+            grid-template-columns: minmax(0, 1fr);
+            min-height: 100vh;
+            min-height: 100dvh;
         }
 
-        /* Masthead carousel: the slides share one grid cell behind the
-         * navbar and hero rows. Loop is 26s for 2 slides, 10s pause each
-         * with 3s crossfades. Extra slides: lengthen the loop and stagger
-         * each slide's animation-delay by one slot. */
+        img, svg, video { max-width: 100%; }
+
+        /* ============================================================================
+         * MASTHEAD — the carousel screen
+         * ============================================================================
+         * Slides, screen wash, navbar and hero all occupy the same grid cell so
+         * the photographs run edge to edge behind the furniture. Every child is
+         * placed on the tracks; none is offset by hand. */
+
         .masthead {
             display: grid;
-            grid-template-rows: 216px auto;
+            grid-template-rows: auto auto auto;
+            grid-template-columns: minmax(0, 1fr);
             position: relative;
+            container: masthead / inline-size;
         }
+
         .masthead .screen {
-            grid-row: 1 / 3;
-            grid-column: 1;
+            grid-area: 1 / 1 / -1 / -1;
             z-index: 0;
             background: linear-gradient(to bottom, rgba(2, 6, 23, 0.62) 0%, rgba(2, 6, 23, 0.42) 55%, rgba(2, 6, 23, 0.58) 100%);
             pointer-events: none;
         }
-        /* The display gadgets float at the bottom-right corner of the
-         * carousel while the menu stays at the top right. */
-        .carousel-tools {
-            grid-row: 1 / 3;
-            grid-column: 1;
-            justify-self: end;
-            align-self: end;
-            margin: 0 2.5rem 1.5rem 0;
-            z-index: 2;
-        }
+
         .slide {
-            grid-row: 1 / 3;
-            grid-column: 1;
+            grid-area: 1 / 1 / -1 / -1;
             background-size: cover;
-            background-position: center;
+            /* The animals stand in the upper part of each photograph, their
+             * eyes about a third of the way down. Anchoring the vertical axis
+             * at that third drops the picture so their heads and eyes clear
+             * the top of the carousel frame. */
+            background-position: 50% 33.3333%;
             opacity: 0;
             animation: heroFade 26s linear infinite;
         }
         .slide-1 { background-image: url('/hero/slide-1.jpg'); }
         .slide-2 { background-image: url('/hero/slide-2.jpg'); animation-delay: 13s; }
+
         @keyframes heroFade {
             0% { opacity: 0; }
             11.538% { opacity: 1; }
@@ -92,60 +176,82 @@
             grid-column: 1;
             z-index: 1;
             background: transparent;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 2.5rem 2.5rem 0;
-            height: 216px;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            align-content: start;
+            padding: var(--edge) var(--edge) var(--sp7);
         }
 
         .navbar-logo {
-            height: 100%;
+            grid-column: 1;
+            grid-row: 1;
+            align-self: start;
+            height: var(--logo-h);
             width: auto;
-            max-height: 216px;
             display: block;
             background: none;
-            padding: 0.5rem;
+            padding: 0;
         }
 
         .brandrow {
-            display: contents;
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            align-items: start;
+            gap: var(--gutter);
+            grid-column: 1;
+            grid-row: 1;
         }
 
+        /* On the carousel the menu is a right-aligned column at the top of the
+         * screen, so the sign-in item keeps the same distance from the right
+         * edge as the navbar keeps from the top. */
         .navbar-menu {
-            display: flex;
-            flex-direction: column;
-            gap: 0.15rem;
+            grid-column: 2;
+            grid-row: 1;
+            justify-self: end;
+            align-self: start;
+            display: grid;
+            grid-auto-flow: row;
+            justify-items: end;
+            align-content: start;
+            gap: var(--sp2);
             background: none;
-            padding: 1rem 1.25rem;
+            padding: 0;
+            min-width: 0;
         }
 
-        .masthead .navbar-menu a {
+        .masthead .navbar-menu a:not(.ctl) {
             color: #dbe3ee;
             text-decoration: none;
-            font-size: 1.1rem;
+            font-size: var(--fs0);
             font-weight: 500;
             letter-spacing: 0.01em;
-            padding: 0.5rem 1rem;
+            padding: var(--sp4) var(--sp6);
             border-radius: var(--radius-sm);
             transition: color 0.15s ease, background 0.15s ease;
-            text-align: right;
             white-space: nowrap;
         }
-
-        .navbar-menu a:hover {
+        .navbar-menu a:not(.ctl):hover {
             color: #f8fafc;
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.08);
         }
 
-        .main {
-            display: grid;
-            grid-template-rows: 1fr;
-            padding: 4rem 4rem 3rem;
-            width: 100%;
-            margin: 0 auto;
-            gap: 1.25rem;
-            min-height: 0;
+        /* The display gadgets sit at the bottom right of the carousel while the
+         * menu stays at the top right. Placement is grid alignment, not offsets.
+         *
+         * Where the masthead is too narrow to hold the headline and the gadget
+         * row side by side, the gadgets take their own track beneath the hero,
+         * so neither can collide with the other at any width. Where there is
+         * room, the gadgets float over the masthead and the hero reserves their
+         * width. Nothing here names a device or an orientation. */
+        .carousel-tools {
+            grid-row: 3;
+            grid-column: 1;
+            justify-self: end;
+            align-self: end;
+            z-index: 2;
+            margin: 0 var(--edge) var(--edge) 0;
+            max-width: 100%;
         }
 
         .hero {
@@ -153,170 +259,198 @@
             grid-column: 1;
             z-index: 1;
             display: grid;
-            grid-template-rows: auto auto;
-            gap: 0.35rem;
-            padding: 2.5rem 2.5rem 3rem;
+            grid-template-rows: auto;
+            /* The column is capped at the hero's own width so the tagline wraps
+             * to it under zoom. An auto track would instead grow to the text
+             * and push the tagline past the window edge. */
+            grid-template-columns: minmax(0, 1fr);
+            justify-items: stretch;
+            /* The tagline starts at the logo's VISIBLE edge, never left of it,
+             * and the whole block clears the gadget row beneath it. */
+            padding: var(--sp2) var(--edge) calc(var(--edge) + var(--ctl) + var(--ctl-gap))
+                     calc(var(--edge) + var(--logo-blind) * var(--logo-h));
+            min-width: 0;
         }
 
-        .hero-brand {
-            font-size: 0.85rem;
-            font-weight: 600;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            color: var(--accent);
-        }
-
-        .hero h1 {
-            font-size: 3.25rem;
-            font-weight: 700;
-            letter-spacing: -0.035em;
-            line-height: 1.1;
-            color: #f8fafc;
-            margin: 0;
+        /* Where the masthead is wide enough to carry the headline and the gadget
+         * row together, the gadgets float over the masthead and the hero
+         * reserves their width. This rule follows the base hero rule so its
+         * reservation wins. */
+        @container masthead (min-width: 46rem) {
+            .carousel-tools {
+                grid-row: 1 / 4;
+                grid-column: 1;
+                align-self: end;
+            }
+            /* The tagline now clears the gadget row by sitting above it, so no
+             * horizontal reservation is needed. */
         }
 
         .tagline-block {
             background: none;
-            padding: 1rem 1.25rem;
-            width: fit-content;
+            padding: 0;
+            /* The block fills the width it is given and the statement wraps
+             * to it naturally when it will not fit, so zooming in narrows the
+             * measure and reflows the text rather than clipping it. */
+            width: auto;
+            max-width: 100%;
+            min-width: 0;
+            /* The top line reads from the logo's edge. */
+            text-align: left;
         }
 
         .tagline-block p {
-            font-size: 2.75rem;
+            /* Sized so the whole statement holds one line wherever the header
+             * can carry it, leaving exactly two lines: the statement and the
+             * quotation beneath it. */
+            font-size: clamp(1rem, 4.2cqi, 2rem);
             font-weight: 400;
             letter-spacing: -0.035em;
-            line-height: 1.1;
+            /* Space between the words, never between the letters within them. */
+            word-spacing: 0.16em;
+            line-height: 1.15;
             color: #f8fafc;
             margin: 0;
+            /* A long headline must never widen the window. */
+            overflow-wrap: break-word;
         }
 
+        /* The tagline is two lines. The upper carries the statement; the lower
+         * carries the quotation at two thirds of it, set close beneath. */
         .tagline-block .t-sub {
             display: block;
-            margin-top: 0.35em;
-            margin-bottom: -0.55em;
-            font-size: 1em;
-            font-family: Georgia, 'Times New Roman', serif;
-            font-style: italic;
+            margin-top: 0.5em;
+            margin-bottom: 0;
+            font-size: 0.667em;
             font-weight: 400;
-            letter-spacing: 0;
-            transform: scaleY(0.5);
-            transform-origin: left top;
-        }
-
-        .hero-tagline {
-            font-size: 2rem;
-            font-weight: 700;
-            letter-spacing: -0.035em;
+            letter-spacing: -0.02em;
+            word-spacing: 0.1em;
             line-height: 1.1;
-            color: #f8fafc;
-            margin: 0;
+            color: inherit;
+            /* Only the lower line finishes flush to the line above it. The
+             * right inset is measured in the browser from the statement's final
+             * wrapped line, so the two agree however the statement reflows. */
+            text-align: right;
+            margin-right: var(--tail-inset, 0px);
         }
 
-        .family {
+        /* ============================================================================
+         * MAIN — the content shell
+         * ============================================================================
+         * The page container is the reference every column decision is measured
+         * against. The content-width gadget changes this container's measure, so
+         * the column count follows the visitor's choice with no extra wiring. */
+
+        .main {
+            grid-row: 2;
+            grid-column: 1;
+            container: page / inline-size;
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1.9125rem;
+            grid-template-rows: auto;
+            grid-template-columns: minmax(0, 1fr);
             align-content: start;
+            padding: var(--gap-page);
+            width: 100%;
+            min-width: 0;
             min-height: 0;
         }
 
-        .family-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 1.1rem 1.15rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.4rem;
-            transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+        html[data-width="normal"] .main { max-width: var(--measure); margin-inline: auto; }
+
+        /* ============================================================================
+         * CARD FAMILY — the flip-card grid
+         * ============================================================================
+         * Column count is decided by the width available to the page container.
+         * Each step is the width at which one more column still clears the card
+         * floor, so a card never renders narrower than it can carry its own
+         * text.
+         *
+         * The count is chosen so the family presents as a composed field rather
+         * a list: the last row of a column count is never allowed to read as a
+         * remainder, and each column carries the same number of cards. The
+         * family holds eight cards, so the balanced counts are those that
+         * divide eight evenly — one, two and four — and those are the counts
+         * the container rules select. A five-across field would leave three
+         * cards stranded on a second row, which presents as inventory rather
+         * than as a collection.
+         *
+         * Nothing here names a device or an orientation. The count follows the
+         * space available, so a phone turned sideways gains columns by
+         * consequence. */
+
+        .family {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: var(--gutter);
+            align-content: start;
+            min-width: 0;
         }
 
-        .family-card:hover {
-            border-color: #cbd5e1;
-            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.04);
-            transform: translateY(-1px);
+        @container page (min-width: 30rem) {
+            .family { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @container page (min-width: 58rem) {
+            .family { grid-template-columns: repeat(4, minmax(0, 1fr)); }
         }
 
-        .family-card h3 {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: var(--text);
-            letter-spacing: -0.01em;
-            margin: 0;
+        /* FLIP CARD — a square, two faces, built entirely on tracks.
+         *
+         * The card is its own sizing container, so everything inside it scales
+         * with the card's own width rather than the window's. Text inside the
+         * card is expressed in em against that card base, which is what keeps
+         * title and body in their ratio to each other at every card size. */
+        .flip {
+            container: card / inline-size;
+            perspective: 120rem;
+            cursor: pointer;
+            min-width: 0;
         }
 
-        .family-card p {
-            font-size: 1rem;
-            color: var(--text-muted);
-            line-height: 1.5;
-            margin: 0;
-        }
-
-        .family-card.card-art {
-            background-repeat: no-repeat;
-            background-position: center;
-            background-size: contain;
-        }
-
-        .family-card.card-art-exotalk {
-            background-image: url('/cards/exotalk.png');
-        }
-
-        .family-card.card-art-exosoul {
-            background-image: url('/cards/exosoul.png');
-        }
-
-        .family-card.card-art-conscia {
-            background-image: url('/cards/conscia.png');
-        }
-
-        .family-card.card-art-exonomy {
-            background-image: url('/cards/exonomy.png');
-        }
-
-        .family-card.card-art-exocracy {
-            background-image: url('/cards/exocracy.png');
-        }
-
-        .family-card.card-art-republet {
-            background-image: url('/cards/republet.png');
-        }
-
-        .family-card.card-art-threesteps {
-            background-image: url('/cards/threesteps.png');
-        }
-
-        .family-card.card-art-internovel {
-            background-image: url('/cards/internovel.png');
-        }
-
-        /* Flip cards: twice the size, two faces, grid-built, rem-scaled. */
-        .flip { perspective: 120rem; cursor: pointer; }
         .flip-box {
             display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            grid-template-rows: minmax(0, 1fr);
+            /* Card height is decided by card width, and nothing else. */
             aspect-ratio: 1 / 1;
             transition: transform 0.9s ease-in-out;
             transform-style: preserve-3d;
         }
         .flip-box.flipped { transform: rotateY(180deg); }
+
         .face {
             grid-area: 1 / 1;
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
             overflow: hidden;
-            background: #dbeafe;
+            background: #ece9f4;
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            padding: 2.75rem;
             display: grid;
+            grid-template-columns: minmax(0, 1fr);
             min-height: 0;
             min-width: 0;
+
+            /* The card's own text base: a share of the card's own width. It
+             * keeps that share at every size, so zooming out enlarges the card
+             * and its text together instead of letting the text fall away. */
+            font-size: clamp(0.85rem, 3.9cqi, 1.45rem);
         }
         .flip:hover .face {
             border-color: #cbd5e1;
             box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.04);
         }
-        .face.front { grid-template-rows: auto minmax(0, 1fr); padding: 0; gap: 0; background: #ece9f4; }
+
+        /* CARD FRONT — art with breathing room around it.
+         * The padding is internal to the face, so the photograph is inset from
+         * the card edge rather than touching it. */
+        .face.front {
+            grid-template-rows: auto minmax(0, 1fr);
+            grid-template-columns: minmax(0, 1fr);
+            gap: 0;
+            padding: 0;
+            background: #ece9f4;
+        }
+
         .face.front h3 {
             grid-row: 1;
             grid-column: 1;
@@ -326,13 +460,16 @@
             -webkit-backface-visibility: hidden;
             background: linear-gradient(to right, #443377 0%, #443377 66.666%, #44337700 100%);
             color: #f8fafc;
-            padding: 0.75rem 0 0.75rem 2.5rem;
-            font-size: 1.8rem;
+            padding: 0.55em 0.85em 0.55em 0.85em;
+            margin: 0.5em 0.5em 0;
+            border-radius: var(--radius-sm);
+            font-size: 1.44em;
             line-height: 1.2;
             font-weight: 600;
             letter-spacing: -0.01em;
-            margin: 0;
+            overflow-wrap: break-word;
         }
+
         .family > .flip:nth-child(1) .face.front h3 {
             background: linear-gradient(to right, #5f48a6 0%, #5f48a6 66.666%, #5f48a600 100%);
         }
@@ -342,60 +479,64 @@
         .family > .flip:nth-child(3) .face.front h3 {
             background: linear-gradient(to right, #60a830 0%, #60a830 66.666%, #60a83000 100%);
         }
-        .art { grid-row: 2; grid-column: 1; display: grid; grid-template-rows: 1fr 1fr; min-height: 0; min-width: 0; margin: 3%; }
-        .art img {
-            grid-row: 1 / 3;
+
+        .art {
+            grid-row: 2;
             grid-column: 1;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            grid-template-rows: minmax(0, 1fr);
+            min-height: 0;
+            min-width: 0;
+            /* Interior breathing room, measured against the card's own text
+             * base so it grows and shrinks with the card. */
+            margin: clamp(0.5rem, 3.4cqi, 2rem);
+        }
+
+        .art img {
+            grid-area: 1 / 1;
             width: 100%;
             height: 100%;
+            min-width: 0;
+            min-height: 0;
             object-fit: contain;
             object-position: center;
             -webkit-mask-image: none;
             mask-image: none;
         }
+
+        /* CARD BACK — the full description, scrollable inside its own track. */
+        .face.back {
+            transform: rotateY(180deg);
+            position: relative;
+            grid-template-rows: auto minmax(0, 1fr);
+            grid-template-columns: minmax(0, 1fr);
+            gap: 1.4em;
+            /* Measured against the card, not the text, so the margin around the
+             * text holds its proportion instead of vanishing as the card grows. */
+            padding: clamp(1.6rem, 5.6cqi, 3.4rem);
+            background: #ecf5e6;
+        }
+
         .face.front .art,
         .face.front .art img,
-        .face.front .teaser,
         .face.front h3,
         .face.back *,
         .face.front * {
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
         }
-        .teaser {
-            font-size: 1.1rem;
+
+        .full {
             grid-row: 2;
             grid-column: 1;
-            align-self: end;
-            margin: 0 0 2.5rem;
-            padding: 2.5rem 2.5rem 0;
-            font-size: 1.35rem;
-            color: var(--text);
-            line-height: 1.5;
-            display: -webkit-box;
-            -webkit-line-clamp: 5;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            line-clamp: 5;
-        }
-        .face.back {
-            transform: rotateY(180deg);
-            container-type: inline-size;
-            position: relative;
-            grid-template-rows: auto minmax(0, 1fr);
-            gap: 1rem;
-            background: #ecf5e6;
-        }
-        .emblem {
-            grid-row: 1;
-            grid-column: 1;
-            max-width: 70%;
-            max-height: 100%;
-            justify-self: center;
-            align-self: center;
-            object-fit: contain;
-        }
-        .full { grid-row: 2; grid-column: 1; overflow-y: auto; scrollbar-width: none; min-height: 0;
+            /* minmax(0, 1fr) above plus min-width 0 here means the text can never
+             * widen the card, whatever it contains. */
+            overflow-y: auto;
+            overflow-x: clip;
+            scrollbar-width: none;
+            min-height: 0;
+            min-width: 0;
             -webkit-mask-image: none;
             mask-image: none;
         }
@@ -412,413 +553,567 @@
             mask-image: linear-gradient(to bottom, transparent 0%, black 22%, black 78%, transparent 100%);
         }
         .full::-webkit-scrollbar { display: none; }
-        .full p { margin: 0; font-size: 1.35rem; color: var(--text); line-height: 1.6; }
-        .totop {
-            position: absolute;
-            inset-block-start: 0.75rem;
-            inset-inline-end: 0.75rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 2.25rem;
-            height: 2.25rem;
-            padding: 0;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            color: var(--text-secondary);
-            cursor: pointer;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
+        .full p {
+            margin: 0;
+            font-size: 1.2em;
+            color: var(--text);
+            line-height: 1.75;
+            overflow-wrap: break-word;
         }
-        .totop.show { opacity: 1; pointer-events: auto; }
-        .totop svg { width: 1.1rem; height: 1.1rem; }
 
-        .tobot {
-            position: absolute;
-            inset-block-end: 0.75rem;
-            inset-inline-end: 0.75rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 2.25rem;
-            height: 2.25rem;
-            padding: 0;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            color: var(--text-secondary);
-            cursor: pointer;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-        }
-        .tobot.show { opacity: 1; pointer-events: auto; }
-        .tobot svg { width: 1.1rem; height: 1.1rem; }
-
-        .masthead .hero-brand {
-            color: #93c5fd;
-        }
         .backlabel {
             grid-row: 1;
             grid-column: 1;
             justify-self: start;
             align-self: start;
             margin: 0;
-            font-size: 1.8rem;
+            font-size: 1.44em;
             font-weight: 600;
             letter-spacing: -0.01em;
+            line-height: 1.2;
             color: var(--text);
             visibility: visible;
             pointer-events: none;
+            overflow-wrap: break-word;
         }
 
-        @media (max-width: 768px) {
-            .navbar { padding: 0 1.25rem; }
-            .navbar-menu a { padding: 0.4rem 0.75rem; }
-            .main { padding: 3.75rem 3rem 3rem; gap: 1rem; }
-            .family { grid-template-columns: repeat(2, 1fr); gap: 1.4625rem; row-gap: 2.5rem; }
-            .family-card { padding: 0.9rem; }
+        /* Scroll jump controls. The only absolute placement in the interface,
+         * because they must escape the card's scroll flow. They sit well off
+         * the card's corners and stay a little transparent, so if one does
+         * pass over text it dims that text rather than hiding it. */
+        .totop, .tobot {
+            position: absolute;
+            display: grid;
+            place-items: center;
+            width: 3.75em;
+            height: 3.75em;
+            padding: 0;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            cursor: pointer;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .totop { inset-block-start: 1em; inset-inline-end: 1em; }
+        .tobot { inset-block-end: 1em; inset-inline-end: 1em; }
+        .totop.show, .tobot.show { opacity: 0.6; pointer-events: auto; }
+        .totop svg, .tobot svg { width: 1.725em; height: 1.725em; }
+
+        /* ============================================================================
+         * DISPLAY GADGETS
+         * ============================================================================
+         * Two icon buttons and the settings gear. Their size is a share of the
+         * fluid root, so they double the page's own notion of a control and
+         * then scale with everything else through zoom and resize alike.
+         * Colours are the bright end of the ramp; nothing here is dimmed. */
+
+        .gadget-row {
+            display: grid;
+            grid-auto-flow: column;
+            align-items: center;
+            justify-content: end;
+            gap: var(--ctl-gap);
         }
 
-        @media (max-width: 480px) {
-            body { grid-template-rows: auto 1fr; }
-            .masthead { grid-template-rows: auto auto; }
-            .navbar {
-                height: auto;
-                padding: 4% 4% 0;
-                flex-wrap: wrap;
-                row-gap: 0.5rem;
-            }
-            .navbar-logo { height: auto; max-height: 5.156rem; background: none; }
-            .brandrow {
-                display: grid;
-                grid-template-columns: auto 1fr;
-                background: rgba(15, 23, 42, 0.5);
-                background-clip: content-box;
-                padding: 4%;
-                width: 100%;
-            }
-            .navbar-menu {
-                background: none;
-                padding: 0;
-                display: grid;
-                grid-template-rows: repeat(3, 1fr);
-                justify-items: end;
-                height: 100%;
-                gap: 0;
-            }
-            .navbar-menu a { align-self: center; }
-            .navbar-menu a {
-                padding: 0.3rem 0.6rem;
-            }
-            .family { grid-template-columns: 1fr; gap: 2rem; }
-            .main { padding-top: 2rem; }
-            .face { padding: 1.25rem; }
-            .tobot {
-                opacity: 0;
-                pointer-events: none;
-                transition: opacity 0.3s ease;
-            }
-            .tobot.show { opacity: 1; pointer-events: auto; }
-            .hero { padding: 4%; }
-            .tagline-block { padding: 4%; margin-left: 4%; }
-            .tagline-block .t2 { display: block; }
+        .ctl {
+            width: var(--ctl);
+            height: var(--ctl);
+            padding: 0;
+            display: inline-grid;
+            place-items: center;
+            border: 1px solid var(--border);
+            border-radius: var(--ctl-radius);
+            background: none;
+            color: var(--text);
+            cursor: pointer;
+            transition: color .15s ease, border-color .15s ease, background .15s ease;
+        }
+        .ctl svg { width: var(--ctl-icon); height: var(--ctl-icon); display: block; }
+        .ctl:hover { color: var(--accent); border-color: var(--accent); }
+        .ctl.active { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
+
+        /* On the dark surfaces — the floating carousel row and the solid bar — the
+         * gadgets keep transparent chrome and full-brightness icons. */
+        .navbar .ctl,
+        .carousel-tools .ctl,
+        .navbar-solid .ctl {
+            border-color: transparent;
+            color: #f8fafc;
+            background: none;
+        }
+        .navbar .ctl:hover,
+        .carousel-tools .ctl:hover,
+        .navbar-solid .ctl:hover { color: #ffffff; border-color: rgba(248, 250, 252, 0.65); }
+        .navbar .ctl.active,
+        .carousel-tools .ctl.active,
+        .navbar-solid .ctl.active {
+            color: #ffffff;
+            background: rgba(248, 250, 252, 0.22);
+            border-color: rgba(248, 250, 252, 0.55);
         }
 
-        @media (max-height: 720px) {
-            .masthead { grid-template-rows: 140px auto; }
-            .navbar { height: 140px; padding: 0 2rem; }
-            .navbar-logo { max-height: 140px; }
-            .navbar-menu a { padding: 0.35rem 0.75rem; }
-            .main { padding: 1rem 2rem 0.75rem; gap: 0.75rem; }
-            .hero { gap: 0.2rem; }
-            .family-card { padding: 0.7rem 0.8rem; gap: 0.25rem; }
+        /* Theme drop: one visible icon button reveals the other two. */
+        .icon-drop-wrap { position: relative; display: inline-grid; justify-self: start; }
+        .drop-backdrop { position: fixed; inset: 0; z-index: 30; }
+
+        .icon-drop-panel {
+            position: absolute;
+            top: calc(100% + var(--sp4));
+            right: 0;
+            z-index: 31;
+            display: grid;
+            gap: var(--sp4);
+            padding: var(--sp4);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--ctl-radius);
+            box-shadow: 0 10px 30px rgba(2, 6, 23, 0.45);
         }
-    
-/* Model Updates additions: dark appearance and wide content options,
-   driven by the settings controls through data attributes. */
-@mixin dark-palette {
-    --bg: #14161a;
-    --surface: #1b1e24;
-    --text: #d7dae0;
-    --text-secondary: #b6bcc7;
-    --text-muted: #8b919c;
-    --border: #2c313a;
-    --accent: #7cc4ff;
-    --accent-soft: #1d2c3f;
-    --nav-bg: #0b0d10;
-}
-@mixin dark-overrides {
-    body { background: var(--bg); color: var(--text); }
-    .family-card { background: var(--surface); border-color: var(--border); }
-    table { color: var(--text); }
-    th, td { border-color: var(--border); }
-    th { background: var(--surface); }
-    a { color: var(--accent); }
-    .face, .face.front, .face.back { background: var(--surface); border-color: var(--border); }
-    .notice { color: #e06c75; }
-}
-html[data-appearance="dark"] { @include dark-palette; @include dark-overrides; }
-@media (prefers-color-scheme: dark) {
-    html[data-appearance="system"] { @include dark-palette; @include dark-overrides; }
-}
-html[data-width="wide"] .main { max-width: 1400px; }
-table { border-collapse: collapse; width: 100%; margin: 1em 0; }
-th, td { border: 1px solid var(--border); padding: 6px 10px; text-align: left; }
-th { background: var(--surface); }
-.navbar-brand { font-weight: 700; }
+        .icon-drop-panel .ctl {
+            color: var(--text);
+            border-color: var(--border);
+            background: none;
+        }
+        .icon-drop-panel .ctl:hover { color: var(--accent); border-color: var(--accent); }
+        .icon-drop-panel .ctl.current {
+            color: var(--accent);
+            background: var(--accent-soft);
+            border-color: var(--accent);
+        }
+        .icon-drop-panel .ctl svg { width: var(--ctl-icon); height: var(--ctl-icon); }
 
-/* Slide images served from the main host. */
-.slide-1 { background-image: url('/hero/slide-1.jpg'); }
-.slide-2 { background-image: url('/hero/slide-2.jpg'); }
+        /* Gadget buttons inside page cards keep gadget styling. */
+        .family-card button.ctl {
+            padding: 0;
+            font-weight: 400;
+            color: var(--text);
+            background: none;
+            border: 1px solid var(--border);
+        }
+        .family-card button.ctl:hover { color: var(--accent); border-color: var(--accent); filter: none; }
+        .family-card button.ctl.active { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
 
-/* Solid top bar for the signed-in section pages (models, settings, docs,
- * sign-in). The home page carries no bar: its gadgetry floats over the
- * carousel instead. */
-.navbar-solid {
-    background: var(--nav-bg);
-    grid-row: auto;
-    grid-column: auto;
-    padding: 0 2.5rem;
-    min-height: 88px;
-    height: auto;
-}
-.navbar-solid .navbar-brand {
-    color: #f8fafc;
-    font-size: 1.25rem;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-}
-.navbar-solid .navbar-logo {
-    height: 5.2rem;
-    width: auto;
-    max-height: none;
-    padding: 0;
-    background: none;
-}
-.navbar-solid .navbar-menu {
-    background: none;
-    padding: 0.75rem 0;
-}
-.navbar-solid .navbar-menu a {
-    color: #dbe3ee;
-    text-decoration: none;
-    font-size: 0.95rem;
-    font-weight: 500;
-    letter-spacing: 0.01em;
-    padding: 0.4rem 0.8rem;
-    border-radius: var(--radius-sm);
-    transition: color 0.15s ease, background 0.15s ease;
-    white-space: nowrap;
-}
-.navbar-solid .navbar-menu a:hover {
-    color: #f8fafc;
-    background: rgba(255, 255, 255, 0.05);
-}
+        /* ============================================================================
+         * SOLID TOP BAR — section pages
+         * ============================================================================ */
+        .navbar-solid {
+            grid-row: auto;
+            grid-column: auto;
+            container: bar / inline-size;
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            align-items: center;
+            gap: var(--gutter);
+            background: var(--nav-bg);
+            padding: var(--sp5) var(--edge);
+            width: 100%;
+            min-width: 0;
+        }
+        .navbar-solid .navbar-logo {
+            align-self: center;
+            height: clamp(2.6rem, 8cqi, 7rem);
+            width: auto;
+            max-height: none;
+            padding: 0;
+            background: none;
+        }
+        .navbar-solid .navbar-menu {
+            grid-column: 2;
+            align-self: center;
+            justify-self: end;
+            display: grid;
+            grid-auto-flow: column;
+            align-items: center;
+            justify-items: end;
+            gap: var(--sp4);
+            padding: 0;
+            min-width: 0;
+        }
+        .navbar-solid .navbar-menu a:not(.ctl) {
+            color: #dbe3ee;
+            text-decoration: none;
+            font-size: var(--fs0);
+            font-weight: 500;
+            letter-spacing: 0.01em;
+            padding: var(--sp4) var(--sp6);
+            border-radius: var(--radius-sm);
+            transition: color 0.15s ease, background 0.15s ease;
+            white-space: nowrap;
+        }
+        .navbar-solid .navbar-menu a:not(.ctl):hover {
+            color: #f8fafc;
+            background: rgba(255, 255, 255, 0.08);
+        }
 
-/* Identity chip with display name, avatar, and switching dropdown. */
-.identity-chip {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
-    padding: 0.5rem 1rem;
-    border-radius: var(--radius-sm);
-}
-.identity-chip:hover { background: rgba(255, 255, 255, 0.05); }
-.avatar {
-    width: 1.75rem;
-    height: 1.75rem;
-    border-radius: 50%;
-    object-fit: cover;
-}
-.avatar-fallback {
-    width: 1.75rem;
-    height: 1.75rem;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--accent);
-    color: #fff;
-    font-weight: 700;
-}
-.chip-name {
-    color: #f8fafc;
-    font-size: 1.1rem;
-    font-weight: 500;
-}
-.chip-dropdown {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-}
-.chip-user {
-    color: #94a3b8;
-    cursor: pointer;
-    padding: 0.5rem 1rem;
-    text-align: right;
-}
-.chip-user:hover { color: #f8fafc; }
-.gadget-row {
-    display: flex;
-    gap: 0.5rem;
-    justify-content: flex-end;
-}
+        /* Identity chip with display name, avatar, and switching dropdown. */
+        .identity-chip {
+            display: grid;
+            grid-auto-flow: column;
+            align-items: center;
+            gap: var(--sp5);
+            cursor: pointer;
+            padding: var(--sp4) var(--sp6);
+            border-radius: var(--radius-sm);
+            white-space: nowrap;
+        }
+        .identity-chip:hover { background: rgba(255, 255, 255, 0.08); }
 
-/* Solid top bar for section pages: compact height, horizontal menu.
- * Overrides the tall vertical carousel stacking above. */
-.navbar-solid {
-    height: auto;
-    min-height: 64px;
-    padding: 0.6rem 2.5rem;
-    align-items: center;
-}
-.navbar-solid .navbar-menu {
-    flex-direction: row;
-    align-items: center;
-    gap: 0.25rem;
-    padding: 0;
-}
-.navbar-solid .navbar-menu a { text-align: left; }
-.navbar-solid .chip-user { text-align: left; }
+        .avatar, .avatar-fallback {
+            width: var(--ctl);
+            height: var(--ctl);
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .avatar-fallback {
+            display: grid;
+            place-items: center;
+            background: var(--accent);
+            color: #fff;
+            font-weight: 700;
+            font-size: var(--fs0);
+        }
 
-/* Human-shaped form controls for sign-in, settings, and models. */
-.family-card input,
-.family-card select,
-.models input,
-.models select {
-    font: inherit;
-    font-size: 0.95rem;
-    color: var(--text);
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 0.55rem 0.75rem;
-    width: 100%;
-    max-width: 22rem;
-}
-.family-card button,
-.models button {
-    font: inherit;
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: #fff;
-    background: var(--accent);
-    border: 1px solid transparent;
-    border-radius: var(--radius-sm);
-    padding: 0.55rem 1.1rem;
-    cursor: pointer;
-}
-.family-card button:hover,
-.models button:hover { filter: brightness(1.08); }
-.models table { font-size: 0.9rem; }
-.models th[data-sort] { cursor: pointer; user-select: none; }
-.ops-row {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 0.75rem;
-    align-items: start;
-    margin-bottom: 1rem;
-}
-.provider-pick {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-}
-.provider-pick label {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    font-size: 0.85rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 0.35rem 0.6rem;
-    cursor: pointer;
-}
-.provider-pick input { width: auto; }
+        .chip-name {
+            color: #f8fafc;
+            font-size: var(--fs0);
+            font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
 
-/* Icon-button display gadgets ported from the mcp-ui tool controls. */
-.ctl { width: 1.75rem; height: 1.75rem; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: var(--radius-sm); background: none; color: var(--text-muted); cursor: pointer; transition: color .15s ease, border-color .15s ease, background .15s ease; }
-.ctl:hover { color: var(--text); border-color: var(--accent); }
-.ctl.active { color: var(--bg); background: var(--accent); border-color: var(--accent); }
-.ctl svg { width: 0.95rem; height: 0.95rem; }
-/* On the dark navbar surfaces (floating masthead row and solid bar) the
-   gadgets stay fully transparent with light icons. */
-.navbar .ctl { width: 2rem; height: 2rem; border-color: transparent; color: #dbe3ee; background: none; }
-.navbar .ctl:hover { color: #f8fafc; border-color: transparent; }
-.navbar .ctl.active { color: #93c5fd; background: none; border-color: transparent; }
-.navbar .ctl svg { width: 1.1rem; height: 1.1rem; }
+        .chip-wrap { position: relative; display: inline-grid; }
+        .chip-dropdown {
+            position: absolute;
+            top: calc(100% + var(--sp4));
+            right: 0;
+            z-index: 20;
+            display: grid;
+            gap: var(--sp2);
+            min-width: 13rem;
+            max-width: min(90vw, 22rem);
+            padding: var(--sp4);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: 0 10px 30px rgba(2, 6, 23, 0.45);
+        }
+        .chip-dropdown a,
+        .chip-user {
+            color: var(--text);
+            text-decoration: none;
+            padding: var(--sp4) var(--sp6);
+            border-radius: var(--radius-sm);
+            font-size: var(--fs0);
+            text-align: left;
+            display: grid;
+            grid-auto-flow: column;
+            align-items: center;
+            gap: var(--sp5);
+            min-width: 0;
+        }
+        .chip-dropdown a:hover,
+        .chip-user:hover { background: var(--accent-soft); color: var(--text); }
+        .chip-user { cursor: pointer; }
+        .chip-user span { overflow: hidden; text-overflow: ellipsis; }
 
-/* Theme drop: one visible icon button reveals the other two. */
-.icon-drop-wrap { position: relative; display: inline-flex; }
-.drop-backdrop { position: fixed; inset: 0; z-index: 30; }
-.icon-drop-panel { position: absolute; top: calc(100% + 0.35rem); right: 0; z-index: 31; display: grid; gap: 0.15rem; padding: 0.35rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: 0 10px 30px rgba(2, 6, 23, 0.45); }
-.icon-drop-panel .ctl { color: var(--text-muted); border-color: var(--border); }
-.icon-drop-panel .ctl:hover { color: var(--accent); border-color: var(--accent); }
-.navbar .icon-drop-panel .ctl { width: 1.75rem; height: 1.75rem; color: var(--text-muted); border-color: var(--border); background: none; }
-.navbar .icon-drop-panel .ctl:hover { color: var(--accent); border-color: var(--accent); }
-.navbar .icon-drop-panel .ctl svg { width: 0.95rem; height: 0.95rem; }
+        /* ============================================================================
+         * SECTION PAGES — heading and card layouts
+         * ============================================================================ */
+        .page-main { align-content: start; gap: var(--sp6); }
 
-/* Gadget buttons inside cards keep gadget styling, not action-button styling. */
-.family-card button.ctl { width: 1.75rem; height: 1.75rem; padding: 0; font-weight: 400; color: var(--text-muted); background: none; border: 1px solid var(--border); }
-.family-card button.ctl:hover { color: var(--text); border-color: var(--accent); filter: none; }
-.family-card button.ctl.active { color: var(--bg); background: var(--accent); border-color: var(--accent); }
+        .page-head { display: grid; gap: var(--sp3); }
+        .page-head h1 {
+            font-size: clamp(var(--fs2), 4.5cqi, var(--fs4));
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            color: var(--text);
+            margin: 0;
+            overflow-wrap: break-word;
+        }
+        .page-head p { color: var(--text-muted); margin: 0; font-size: var(--fs0); }
+        .page-head .head-row {
+            display: grid;
+            grid-auto-flow: column;
+            grid-auto-columns: minmax(0, auto);
+            align-items: center;
+            gap: var(--sp5);
+            flex-wrap: wrap;
+        }
+        .page-head .head-row p { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 
-/* Page-head secondary buttons (sign out). */
-.page-head button { font: inherit; font-size: 0.95rem; font-weight: 600; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.45rem 0.9rem; cursor: pointer; }
-.page-head button:hover { border-color: var(--accent); color: var(--accent); }
+        .page-cards {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: var(--gutter);
+            align-content: start;
+            min-width: 0;
+        }
+        @container page (min-width: 37rem) {
+            .page-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @container page (min-width: 76rem) {
+            .page-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        }
 
-/* Chip dropdown links must read on the panel surface, not inherit the
-   light-on-dark masthead link color. */
-.navbar-menu .chip-dropdown a { color: var(--text); }
+        /* Form fields: label and control on one grid, stacked when narrow. */
+        .field {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: var(--sp2);
+            align-items: center;
+            min-width: 0;
+        }
+        @container page (min-width: 30rem) {
+            .field { grid-template-columns: 9rem minmax(0, 1fr); gap: var(--sp5); }
+        }
+        .field > label { color: var(--text-secondary); font-size: var(--fs-1); font-weight: 500; }
 
-/* Chip dropdown: absolutely positioned panel for readability. */
-.chip-wrap { position: relative; display: inline-grid; }
-.chip-dropdown { position: absolute; top: calc(100% + 0.35rem); right: 0; z-index: 20; display: grid; gap: 0.15rem; min-width: 13rem; padding: 0.35rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 10px 30px rgba(2, 6, 23, 0.45); }
-.chip-dropdown a { color: var(--text); text-decoration: none; padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); font-size: 0.95rem; text-align: left; }
-.chip-dropdown a:hover { background: var(--accent-soft); color: var(--text); }
-.chip-user { color: var(--text-secondary); cursor: pointer; padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); text-align: left; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem; }
-.chip-user:hover { color: var(--text); background: var(--accent-soft); }
+        .btn-row {
+            display: grid;
+            grid-auto-flow: column;
+            grid-auto-columns: minmax(0, auto);
+            align-items: center;
+            gap: var(--sp5);
+            flex-wrap: wrap;
+        }
 
-/* Section pages: heading and card layouts on the plain surface. */
-.page-main { grid-template-rows: none; align-content: start; gap: 1.5rem; }
-.page-head { display: grid; gap: 0.35rem; }
-.page-head h1 { font-size: 2.25rem; font-weight: 700; letter-spacing: -0.03em; color: var(--text); margin: 0; }
-.page-head p { color: var(--text-muted); margin: 0; font-size: 1.05rem; }
-.page-head .head-row { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
-.page-head .head-row p { margin: 0; }
-.page-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr)); gap: 1.25rem; align-content: start; }
+        .id-list { display: grid; gap: var(--sp3); margin: var(--sp5) 0; }
+        .id-list button {
+            display: grid;
+            grid-auto-flow: column;
+            align-items: center;
+            justify-content: start;
+            gap: var(--sp5);
+            width: 100%;
+            min-width: 0;
+            text-align: left;
+            font: inherit;
+            font-size: var(--fs-1);
+            font-weight: 500;
+            color: #fff;
+            background: var(--accent);
+            border: 1px solid transparent;
+            border-radius: var(--radius-sm);
+            padding: var(--sp5) var(--sp6);
+            cursor: pointer;
+        }
+        .id-list button:hover { filter: brightness(1.08); }
+        .id-list .avatar-fallback {
+            width: var(--ctl);
+            height: var(--ctl);
+            background: rgba(255, 255, 255, 0.25);
+            color: var(--accent);
+        }
 
-/* Form fields: label + control in a 2-column grid. */
-.field { display: grid; grid-template-columns: 9rem minmax(0, 1fr); gap: 0.75rem; align-items: center; }
-.field > label { color: var(--text-secondary); font-size: 0.9rem; font-weight: 500; }
-@media (max-width: 560px) { .field { grid-template-columns: minmax(0, 1fr); gap: 0.25rem; } }
+        .row-list { display: grid; gap: var(--sp2); margin: var(--sp4) 0; }
+        .row-list .row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: var(--sp5);
+            align-items: center;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: var(--sp4) var(--sp6);
+            font-size: var(--fs-1);
+            min-width: 0;
+        }
+        .row-list .row span { color: var(--text); word-break: break-all; min-width: 0; }
 
-/* Button rows and identity lists. */
-.btn-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
-.btn-row button { font: inherit; font-size: 0.95rem; font-weight: 600; color: #fff; background: var(--accent); border: 1px solid transparent; border-radius: var(--radius-sm); padding: 0.55rem 1.1rem; cursor: pointer; }
-.btn-row button:hover { filter: brightness(1.08); }
-button.secondary { color: var(--text); background: var(--surface); border: 1px solid var(--border); }
-button.secondary:hover { border-color: var(--accent); color: var(--accent); filter: none; }
-button.small { font-size: 0.85rem; padding: 0.35rem 0.7rem; }
+        .notice { color: #c04650; font-size: var(--fs-1); margin: var(--sp4) 0 0; }
 
-.id-list { display: grid; gap: 0.4rem; margin: 0.75rem 0; }
-.id-list button { display: flex; align-items: center; gap: 0.6rem; width: 100%; text-align: left; justify-content: flex-start; font: inherit; font-size: 0.95rem; font-weight: 500; color: #fff; background: var(--accent); border: 1px solid transparent; border-radius: var(--radius-sm); padding: 0.55rem 0.75rem; cursor: pointer; }
-.id-list button:hover { filter: brightness(1.08); }
-.id-list .avatar-fallback { width: 1.75rem; height: 1.75rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.25); color: var(--accent); font-weight: 700; font-size: 0.9rem; flex-shrink: 0; }
+        /* ============================================================================
+         * TABLES — the models registry
+         * ============================================================================
+         * A registry table is the one surface that can hold more columns than a
+         * phone can show. The table is allowed to scroll inside its own frame;
+         * the page around it never widens. */
 
-.row-list { display: grid; gap: 0.35rem; margin: 0.5rem 0; }
-.row-list .row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.75rem; align-items: center; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.45rem 0.75rem; font-size: 0.9rem; }
-.row-list .row span { color: var(--text); word-break: break-all; }
+        .runs { display: grid; gap: var(--sp4); }
+        .models { display: grid; gap: var(--sp4); min-width: 0; }
+        .models h2 { font-size: var(--fs2); margin: 0; }
 
-.notice { color: #c04650; font-size: 0.9rem; margin: 0.5rem 0 0; }
-html[data-appearance="dark"] .notice { color: #e06c75; }
+        .ops-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: var(--sp5);
+            align-items: start;
+            min-width: 0;
+        }
+        @container page (min-width: 37rem) {
+            .ops-row { grid-template-columns: minmax(0, 1fr) auto; }
+        }
 
-.page-main a { color: var(--accent); }
+        .provider-pick {
+            display: grid;
+            grid-auto-flow: column;
+            grid-auto-columns: minmax(0, auto);
+            gap: var(--sp3);
+            flex-wrap: wrap;
+        }
+        .provider-pick label {
+            display: grid;
+            grid-auto-flow: column;
+            align-items: center;
+            gap: var(--sp3);
+            font-size: var(--fs-1);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: var(--sp3) var(--sp5);
+            cursor: pointer;
+        }
+        .provider-pick input { width: auto; }
 
-/* Gridify family-card internals. */
-.family-card { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.6rem; align-content: start; }
-.family-card h4 { font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); margin: 0.75rem 0 0.25rem; letter-spacing: 0.02em; text-transform: uppercase; }
+        .table-scroll {
+            min-width: 0;
+            max-width: 100%;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 0;
+            font-size: var(--fs-1);
+        }
+        th, td {
+            border: 0;
+            border-bottom: 1px solid var(--border);
+            padding: var(--sp4) var(--sp6);
+            text-align: left;
+            white-space: nowrap;
+        }
+        th { background: var(--surface); font-weight: 600; }
+        th[data-sort] { cursor: pointer; user-select: none; }
+
+        /* ============================================================================
+         * SHARED CONTROLS
+         * ============================================================================ */
+        .family-card input,
+        .family-card select,
+        .models input,
+        .models select {
+            font: inherit;
+            font-size: var(--fs-1);
+            color: var(--text);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: var(--sp5) var(--sp6);
+            width: 100%;
+            min-width: 0;
+        }
+
+        .family-card button,
+        .models button {
+            font: inherit;
+            font-size: var(--fs-1);
+            font-weight: 600;
+            color: #fff;
+            background: var(--accent);
+            border: 1px solid transparent;
+            border-radius: var(--radius-sm);
+            padding: var(--sp5) var(--sp7);
+            cursor: pointer;
+        }
+        .family-card button:hover,
+        .models button:hover { filter: brightness(1.08); }
+
+        button.secondary {
+            color: var(--text);
+            background: var(--surface);
+            border: 1px solid var(--border);
+        }
+        button.secondary:hover { border-color: var(--accent); color: var(--accent); filter: none; }
+        button.small { font-size: var(--fs-2); padding: var(--sp3) var(--sp5); }
+
+        .page-head button {
+            font: inherit;
+            font-size: var(--fs-1);
+            font-weight: 600;
+            color: var(--text);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: var(--sp4) var(--sp6);
+            cursor: pointer;
+        }
+        .page-head button:hover { border-color: var(--accent); color: var(--accent); }
+
+        .page-main a { color: var(--accent); }
+
+        /* ============================================================================
+         * PAGE CARDS
+         * ============================================================================ */
+        .family-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: var(--sp6);
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: var(--sp5);
+            align-content: start;
+            min-width: 0;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .family-card:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.04);
+        }
+        .family-card h3 {
+            font-size: var(--fs0);
+            font-weight: 600;
+            color: var(--text);
+            letter-spacing: -0.01em;
+            margin: 0;
+        }
+        .family-card h4 {
+            font-size: var(--fs-1);
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin: var(--sp5) 0 var(--sp2);
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+        }
+        .family-card p {
+            font-size: var(--fs-1);
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin: 0;
+            overflow-wrap: break-word;
+        }
+
+        /* ============================================================================
+         * APPEARANCE — light, dark, system
+         * ============================================================================ */
+        @mixin dark-palette {
+            --bg: #14161a;
+            --surface: #1b1e24;
+            --text: #e7e9ee;
+            --text-secondary: #c4cad4;
+            --text-muted: #a3aab6;
+            --border: #2c313a;
+            --accent: #7cc4ff;
+            --accent-soft: #1d2c3f;
+            --nav-bg: #0b0d10;
+        }
+        @mixin dark-overrides {
+            body { background: var(--bg); color: var(--text); }
+            .family-card { background: var(--surface); border-color: var(--border); }
+            .face.front { background: var(--surface); border-color: var(--border); }
+            .face.back { background: var(--surface); border-color: var(--border); }
+            th, td { border-color: var(--border); }
+            th { background: var(--surface); }
+            a { color: var(--accent); }
+            .notice { color: #e06c75; }
+        }
+        html[data-appearance="dark"] { @include dark-palette; @include dark-overrides; }
+        @media (prefers-color-scheme: dark) {
+            html[data-appearance="system"] { @include dark-palette; @include dark-overrides; }
+        }

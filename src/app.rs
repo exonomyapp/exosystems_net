@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use leptos_meta::{provide_meta_context, MetaTags, Stylesheet, Title};
+use leptos_meta::{provide_meta_context, MetaTags, Script, Stylesheet, Title};
 use leptos_router::{
     components::{Route, Router, Routes, A},
     hooks::use_navigate,
@@ -21,6 +21,7 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
             <head>
                 <meta charset="utf-8"/>
                 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+                <Script src="/tagline-align.js"/>
                 <link rel="preconnect" href="https://fonts.googleapis.com"/>
                 <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet"/>
                 <AutoReload options=options.clone() />
@@ -53,10 +54,14 @@ const CARDS: [(&str, &str, &str); 8] = [
      "Collaborative storytelling for young authors. Each writer's contributions are digitally signed — every paragraph permanently linked to the identity that wrote it — so authorship stays verifiable and intellectual property stays with its creator. Characters can travel between stories through the Travel Trunk, the Novel Spine holds each story's structure, and novels are written together under unanimous consent. Flexible collaboration, clear attribution, and protected ownership make it a writing home that grows with its authors, and each novel unfolds inside ExoTalk as one of the family's apps."),
 ];
 
-const ICON_MONITOR: &str = "M2 3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H9.5v1.5h2a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h2V11H3a1 1 0 0 1-1-1V3zm1 0v7h10V3H3z";
-const ICON_SUN: &str = "M8 4.5A3.5 3.5 0 1 0 8 11.5 3.5 3.5 0 0 0 8 4.5zM8 0a.5.5 0 0 1 .5.5v1.5a.5.5 0 0 1-1 0V.5A.5.5 0 0 1 8 0zm0 13.5a.5.5 0 0 1 .5.5v1.5a.5.5 0 0 1-1 0V14a.5.5 0 0 1 .5-.5zM0 8a.5.5 0 0 1 .5-.5H2a.5.5 0 0 1 0 1H.5A.5.5 0 0 1 0 8zm13.5 0a.5.5 0 0 1 .5-.5h1.5a.5.5 0 0 1 0 1H14a.5.5 0 0 1-.5-.5zM2.3 2.3a.5.5 0 0 1 .7 0l1.1 1a.5.5 0 1 1-.7.8l-1.1-1a.5.5 0 0 1 0-.8zm9.6 9.6a.5.5 0 0 1 .7 0l1.1 1a.5.5 0 0 1-.7.8l-1.1-1a.5.5 0 0 1 0-.8zm1.8-9.6a.5.5 0 0 1 0 .7l-1 1.1a.5.5 0 1 1-.8-.7l1-1.1a.5.5 0 0 1 .8 0zM3.9 11.9a.5.5 0 0 1 0 .7l-1 1.1a.5.5 0 1 1-.7-.8l1-1.1a.5.5 0 0 1 .7 0z";
-const ICON_MOON: &str = "M6 1a7 7 0 0 0 0 14c3.5 0 6.5-2.6 7-6a.5.5 0 0 0-.85-.43A4.5 4.5 0 0 1 6.43 3a.5.5 0 0 0-.43-.85V1z";
-const ICON_WIDTH: &str = "M21 11V3h-8l3.29 3.29-10 10L3 13v8h8l-3.29-3.29 10-10L21 11z";
+/* Display-gadget icons from Lucide (ISC licensed), drawn as strokes on a
+ * 24-unit grid so they hold their shape at every size. */
+const ICON_MONITOR: &str = "<rect width=\"20\" height=\"14\" x=\"2\" y=\"3\" rx=\"2\"/><line x1=\"8\" x2=\"16\" y1=\"21\" y2=\"21\"/><line x1=\"12\" x2=\"12\" y1=\"17\" y2=\"21\"/>";
+const ICON_SUN: &str = "<circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 2v2\"/><path d=\"M12 20v2\"/><path d=\"m4.93 4.93 1.41 1.41\"/><path d=\"m17.66 17.66 1.41 1.41\"/><path d=\"M2 12h2\"/><path d=\"M20 12h2\"/><path d=\"m6.34 17.66-1.41 1.41\"/><path d=\"m19.07 4.93-1.41 1.41\"/>";
+const ICON_MOON: &str = "<path d=\"M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401\"/>";
+const ICON_WIDTH: &str = "<path d=\"M8 3H5a2 2 0 0 0-2 2v3\"/><path d=\"M21 8V5a2 2 0 0 0-2-2h-3\"/><path d=\"M3 16v3a2 2 0 0 0 2 2h3\"/><path d=\"M16 21h3a2 2 0 0 0 2-2v-3\"/>";
+const ICON_WIDTH_FIT: &str = "<path d=\"M8 3v3a2 2 0 0 1-2 2H3\"/><path d=\"M21 8h-3a2 2 0 0 1-2-2V3\"/><path d=\"M3 16h3a2 2 0 0 1 2 2v3\"/><path d=\"M16 21v-3a2 2 0 0 1 2-2h3\"/>";
+const ICON_GEAR: &str = "<path d=\"M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/>";
 
 #[component]
 pub fn App() -> impl IntoView {
@@ -114,13 +119,7 @@ fn load_identity() -> Resource<Option<IdentityState>> {
 fn FloatingGadgets(identity: Resource<Option<IdentityState>>) -> impl IntoView {
     let users = Resource::new(|| (), |_| async move { users_list().await.unwrap_or_default() });
     let (chip_open, set_chip_open) = signal(false);
-    let (appearance, set_appearance) = signal("system".to_string());
-    let (width, set_width) = signal("normal".to_string());
-    try_load_browser_settings(&set_appearance, &set_width);
-    let apply = apply_display(appearance, width);
-    let _ = Effect::new(move |_| {
-        apply_browser_settings(&appearance.get(), &width.get());
-    });
+    let prefs = shared_prefs();
 
     view! {
         
@@ -129,7 +128,6 @@ fn FloatingGadgets(identity: Resource<Option<IdentityState>>) -> impl IntoView {
             <img src="/exosys.png" alt="ExoSystems" class="navbar-logo"/>
             <div class="navbar-menu">
                 {move || identity.get().flatten().filter(|id| id.model_updates).map(|_| view! { <A href="/models">"Models"</A> })}
-                <A href="/settings">"Settings"</A>
                 {move || match identity.get().flatten() {
                     Some(id) => view! {
                         <span class="chip-wrap">
@@ -159,7 +157,7 @@ fn FloatingGadgets(identity: Resource<Option<IdentityState>>) -> impl IntoView {
             </div>
         </div>
         <div class="carousel-tools">
-            <DisplayGadgets appearance=appearance set_appearance=set_appearance width=width set_width=set_width apply=apply/>
+            <DisplayGadgets prefs=prefs show_settings=true/>
         </div>
         
     }
@@ -195,8 +193,8 @@ fn ThemeDrop(
                 title=move || theme_label(&appearance.get())
                 aria-label=move || theme_label(&appearance.get())
                 on:click=move |_| set_drop_open.set(!drop_open.get())>
-                <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true">
-                    <path d=move || theme_icon(&appearance.get())/>
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <g inner_html=move || theme_icon(&appearance.get())/>
                 </svg>
             </button>
             {move || drop_open.get().then(|| {
@@ -204,18 +202,19 @@ fn ThemeDrop(
                 view! {
                     <span class="drop-backdrop" on:click=move |_| set_drop_open.set(false)></span>
                     <span class="icon-drop-panel">
-                        {["system", "light", "dark"].into_iter().filter(move |v| *v != current).map(|v| {
+                        {["system", "light", "dark"].into_iter().map(|v| {
                             let a = apply_panel.clone();
+                            let is_current = v == current.as_str();
                             view! {
-                                <button type="button" class="ctl"
+                                <button type="button" class="ctl" class:current=move || is_current
                                     title=theme_label(v) aria-label=theme_label(v)
                                     on:click=move |_| {
                                         set_appearance.set(v.to_string());
                                         a();
                                         set_drop_open.set(false);
                                     }>
-                                    <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true">
-                                        <path d=theme_icon(v)/>
+                                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <g inner_html=theme_icon(v)/>
                                     </svg>
                                 </button>
                             }
@@ -238,28 +237,87 @@ fn WidthToggle(
             title=move || if width.get() == "wide" { "Fit to margins" } else { "Full width" }
             aria-label=move || if width.get() == "wide" { "Fit to margins" } else { "Full width" }
             on:click=move |_| { set_width.set(if width.get() == "wide" { "normal".into() } else { "wide".into() }); apply(); }>
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
-                <path d=ICON_WIDTH/>
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <g inner_html=move || if width.get() == "wide" { ICON_WIDTH_FIT } else { ICON_WIDTH }/>
             </svg>
         </button>
     }
 }
 
 #[component]
+fn SettingsGear() -> impl IntoView {
+    view! {
+        <a href="/settings" class="ctl" title="Settings" aria-label="Settings">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <g inner_html=ICON_GEAR/>
+            </svg>
+        </a>
+    }
+}
+
+/// Display preferences are shared by every gadget instance on the page, so the
+/// gadgets in the top bar and the gadgets inside a page card always agree.
+#[derive(Clone, Copy)]
+pub struct DisplayPrefs {
+    pub appearance: ReadSignal<String>,
+    pub width: ReadSignal<String>,
+    pub set_appearance: WriteSignal<String>,
+    pub set_width: WriteSignal<String>,
+}
+
+/// One set of display preferences for the whole application, so every gadget
+/// instance on every surface reads and writes the same state.
+fn shared_prefs() -> DisplayPrefs {
+    use_context::<DisplayPrefs>().unwrap_or_else(|| {
+        let prefs = display_prefs();
+        provide_context(prefs);
+        prefs
+    })
+}
+
+fn display_prefs() -> DisplayPrefs {
+    let (appearance, set_appearance) = signal("system".to_string());
+    let (width, set_width) = signal("normal".to_string());
+    try_load_browser_settings(&set_appearance, &set_width);
+    let prefs = DisplayPrefs {
+        appearance,
+        width,
+        set_appearance,
+        set_width,
+    };
+    let a = appearance;
+    let w = width;
+    let _ = Effect::new(move |_| {
+        apply_browser_settings(&a.get(), &w.get());
+    });
+    prefs
+}
+
+#[component]
 fn DisplayGadgets(
-    appearance: ReadSignal<String>,
-    set_appearance: WriteSignal<String>,
-    width: ReadSignal<String>,
-    set_width: WriteSignal<String>,
-    apply: impl Fn() + Clone + Send + 'static,
+    prefs: DisplayPrefs,
+    show_settings: bool,
 ) -> impl IntoView {
-    let apply_theme = apply.clone();
-    let apply_width = apply;
+    let appearance = prefs.appearance;
+    let set_appearance = prefs.set_appearance;
+    let width = prefs.width;
+    let set_width = prefs.set_width;
+    let apply = apply_display(appearance, width);
     view! {
         <span class="gadget-row">
-            <ThemeDrop appearance=appearance set_appearance=set_appearance apply=apply_theme/>
-            <WidthToggle width=width set_width=set_width apply=apply_width/>
+            <ThemeDrop appearance=appearance set_appearance=set_appearance apply=apply.clone()/>
+            <WidthToggle width=width set_width=set_width apply=apply/>
+            {show_settings.then(|| view! { <SettingsGear/> }.into_any())}
         </span>
+    }
+}
+
+#[component]
+fn Tagline() -> impl IntoView {
+    view! {
+        <div class="tagline-block">
+            <p><span class="t1">"Hello, World! We're building something new."</span>{" "}<span class="t2">"Private by design. Connected by nature."</span><span class="t-sub">"... for the software was made for the man, not the man for the software!"</span></p>
+        </div>
     }
 }
 
@@ -273,9 +331,7 @@ fn HomePage() -> impl IntoView {
                     <div class="screen"></div>
                     <FloatingGadgets identity=identity/>
             <section class="hero">
-                <div class="tagline-block">
-                    <p><span class="t1">"Hello, World! We're building something new."</span>{" "}<span class="t2">"Private by design. Connected by nature."</span><span class="t-sub">"... for the software was made for the man, not the man for the software!"</span></p>
-                </div>
+                <Tagline/>
             </section>
         </header>
         <main class="main">
@@ -362,13 +418,7 @@ fn FlipCard(title: &'static str, art: &'static str, full: &'static str) -> impl 
 /// route recognizes the main-page session instead of running its own.
 /// The current route never lists a menu item pointing to itself.
 fn ModelsNavbar(show_models: bool, display_name: String, current: &'static str) -> impl IntoView {
-    let (appearance, set_appearance) = signal("system".to_string());
-    let (width, set_width) = signal("normal".to_string());
-    try_load_browser_settings(&set_appearance, &set_width);
-    let apply = apply_display(appearance, width);
-    let _ = Effect::new(move |_| {
-        apply_browser_settings(&appearance.get(), &width.get());
-    });
+    let prefs = shared_prefs();
     view! {
         <nav class="navbar navbar-solid">
             <img src="/exosys.png" alt="ExoSystems" class="navbar-logo"/>
@@ -377,15 +427,12 @@ fn ModelsNavbar(show_models: bool, display_name: String, current: &'static str) 
                 {show_models.then(|| if current != "models" {
                     view! { <A href="/models">"Models"</A> }.into_any()
                 } else { view! {}.into_any() })}
-                {if current != "settings" {
-                    view! { <A href="/settings">"Settings"</A> }.into_any()
-                } else { view! {}.into_any() }}
                 {if display_name.is_empty() {
                     if current != "signin" {
                         view! { <A href="/signin">"Sign in"</A> }.into_any()
                     } else { view! {}.into_any() }
                 } else { view! { <span class="chip-name">{display_name}</span> }.into_any() }}
-                <DisplayGadgets appearance=appearance set_appearance=set_appearance width=width set_width=set_width apply=apply.clone()/>
+                <DisplayGadgets prefs=prefs show_settings=current != "settings"/>
             </div>
         </nav>
     }
@@ -757,6 +804,7 @@ fn ModelsTable() -> impl IntoView {
                 let list = shown();
                 view! {
                     <p>{format!("{} of {} shown", list.len(), rows.get().map(|l| l.len()).unwrap_or(0))}</p>
+                    <div class="table-scroll">
                     <table>
                         <tr>
                             <th data-sort="1" on:click=move |_| cycle("model")>{move || format!("Model{}", mark("model"))}</th>
@@ -768,6 +816,7 @@ fn ModelsTable() -> impl IntoView {
                             <tr><td>{m.model_id}</td><td>{m.provider}</td><td>{m.context_window.map(|c| c.to_string()).unwrap_or_default()}</td><td>{m.last_tested.unwrap_or_default()}</td></tr>
                         }).collect::<Vec<_>>()}
                     </table>
+                    </div>
                 }
             }}
         </Suspense>
@@ -834,17 +883,15 @@ fn SettingsPage() -> impl IntoView {
             }
         },
     );
-    let (appearance, set_appearance) = signal("system".to_string());
-    let (width, set_width) = signal("normal".to_string());
+    let prefs = shared_prefs();
+    let appearance = prefs.appearance;
+    let set_appearance = prefs.set_appearance;
+    let width = prefs.width;
+    let set_width = prefs.set_width;
     let (note, set_note) = signal(String::new());
     let (name_edit, set_name_edit) = signal(String::new());
 
-    try_load_browser_settings(&set_appearance, &set_width);
-
     let apply = apply_display(appearance, width);
-    let _ = Effect::new(move |_| {
-        apply_browser_settings(&appearance.get(), &width.get());
-    });
     let server_settings = Resource::new(
         || (),
         |_| async move {
