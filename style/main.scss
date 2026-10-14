@@ -327,11 +327,8 @@
             word-spacing: 0.1em;
             line-height: 1.1;
             color: inherit;
-            /* Only the lower line finishes flush to the line above it. The
-             * right inset is measured in the browser from the statement's final
-             * wrapped line, so the two agree however the statement reflows. */
+            /* Only the lower line finishes at the right side of its row. */
             text-align: right;
-            margin-right: var(--tail-inset, 0px);
         }
 
         /* ============================================================================
