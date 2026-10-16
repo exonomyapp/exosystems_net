@@ -1144,22 +1144,22 @@
  * Nothing above 48rem is touched. */
 
 @media (max-width: 48rem) {
-    /* Halve the header's inner padding: hero, logo, menu, gadget margins. */
+    /* Every side of the header keeps padding on mobile, in both orientations. */
     .hero {
         grid-area: 2 / 1;
-        padding: 0 0 calc(var(--edge) / 2) calc(var(--edge) / 2 + var(--logo-blind) * var(--logo-h) / 2);
+        padding: calc(var(--edge) / 2) calc(var(--edge) / 2) calc(var(--edge) / 2) calc(var(--edge) / 2 + var(--logo-blind) * var(--logo-h) / 2);
     }
     .navbar-logo {
-        margin: calc(var(--edge) / 2) 0 0 calc(var(--edge) / 2);
+        margin: calc(var(--edge) / 2) calc(var(--edge) / 2) calc(var(--edge) / 2) calc(var(--edge) / 2);
     }
     .navbar-menu {
-        margin: calc(var(--edge) / 2) calc(var(--edge) / 2) 0 0;
+        margin: calc(var(--edge) / 2) calc(var(--edge) / 2) calc(var(--edge) / 2) calc(var(--edge) / 2);
     }
     .carousel-tools {
         grid-area: 3 / 1;
         justify-self: end;
         align-self: start;
-        margin: calc(var(--edge) / 2) 0 0 0;
+        margin: calc(var(--edge) / 2) calc(var(--edge) / 2) calc(var(--edge) / 2) calc(var(--edge) / 2);
     }
 
     /* Single column masthead: row 1 holds logo + menu side by side, row 2 the
