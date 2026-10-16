@@ -1136,52 +1136,80 @@
         }
 
 /* ============================================================================
- * MOBILE — viewport at or below 48rem
+ * NARROW MASTHEAD — masthead narrower than 56rem
  * ============================================================================
- * Mobile only: the masthead collapses to a single column so the top row holds
- * the logo and menu, the taglines come next, and the gadgets sit last. Header
- * inner padding is halved, the logo grows 15%, and card padding is halved.
- * Nothing above 48rem is touched. */
+ * The masthead is measured by its own inline size, not by the viewport, so
+ * this holds in every orientation and at every zoom level without naming a
+ * device. A phone held upright and a phone held sideways both land here.
+ *
+ * The single column stacks the furniture in reading order: the logo and menu
+ * share the first row, the taglines take the second, the gadgets the third.
+ * Every inset stays present on every side at every width.
+ *
+ * The logo grows against the narrow measure and the menu and gadgets shrink
+ * to suit it. The tagline drops the logo-edge alignment inset, because on one
+ * narrow column the tagline reads from the margin rather than from the logo. */
 
-@media (max-width: 48rem) {
-    /* Every side of the header keeps padding on mobile, in both orientations. */
+@container masthead (max-width: 56rem) {
+    /* One column, three rows, in reading order. */
+    .masthead {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto auto;
+        column-gap: 0;
+        row-gap: var(--sp2);
+        /* The menu and gadgets shrink to suit the narrow measure. Declared
+         * here rather than on :root, because a container query cannot
+         * restyle an element that contains the container. */
+        --ctl: 2rem;
+        --ctl-icon: 1.1rem;
+        --ctl-gap: 0.4rem;
+    }
+
+    .navbar-logo {
+        grid-area: 1 / 1;
+        justify-self: start;
+        align-self: start;
+        margin: var(--edge) 0 0 var(--edge);
+        height: clamp(4.5rem, 11cqi, 8rem);
+    }
+
+    .navbar-menu {
+        grid-area: 1 / 1;
+        justify-self: end;
+        align-self: start;
+        margin: var(--edge) var(--edge) 0 0;
+        display: grid;
+        grid-auto-flow: column;
+        align-items: center;
+        justify-items: end;
+        gap: var(--sp2);
+    }
+
+    .masthead .navbar-menu a:not(.ctl) {
+        font-size: var(--fs-1);
+        padding: var(--sp3) var(--sp4);
+    }
+
     .hero {
         grid-area: 2 / 1;
-        padding: calc(var(--edge) / 2) calc(var(--edge) / 2) calc(var(--edge) / 2) calc(var(--edge) / 2 + var(--logo-blind) * var(--logo-h) / 2);
+        /* Even inset on every side; the tagline no longer reserves the
+         * logo's transparent left margin. */
+        padding: 0 var(--edge) var(--edge);
     }
-    .navbar-logo {
-        margin: calc(var(--edge) / 2) calc(var(--edge) / 2) calc(var(--edge) / 2) calc(var(--edge) / 2);
-    }
-    .navbar-menu {
-        margin: calc(var(--edge) / 2) calc(var(--edge) / 2) calc(var(--edge) / 2) calc(var(--edge) / 2);
-    }
+
     .carousel-tools {
         grid-area: 3 / 1;
         justify-self: end;
         align-self: start;
-        margin: calc(var(--edge) / 2) calc(var(--edge) / 2) calc(var(--edge) / 2) calc(var(--edge) / 2);
+        margin: 0 var(--edge) var(--edge) 0;
     }
 
-    /* Single column masthead: row 1 holds logo + menu side by side, row 2 the
-     * taglines, row 3 the gadgets. No side column. */
-    .masthead {
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: auto auto auto;
-        row-gap: var(--sp2);
-    }
-    .brandrow {
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: flex-start;
-        grid-area: 1 / 1;
-        width: 100%;
-    }
+    /* Card breathing room halves on the narrow measure. */
+    .family { gap: calc(var(--gutter) / 2); }
+    .art { margin: clamp(0.25rem, 1.7cqi, 1rem); }
+}
 
-    /* Logo grows 15% on mobile. */
-    html { --logo-h: clamp(4.025rem, 14.95cqi, 10.35rem); }
-
-    /* Halve card padding: the inner breathing room around card art. */
+@container page (max-width: 40rem) {
     .art { margin: clamp(0.25rem, 1.7cqi, 1rem); }
     .family { gap: calc(var(--gutter) / 2); }
 }
