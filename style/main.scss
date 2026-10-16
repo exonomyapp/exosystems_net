@@ -308,8 +308,9 @@
             grid-template-columns: fit-content(100%);
             /* Sized so the whole statement holds one line wherever the header
              * can carry it, leaving exactly two lines: the statement and the
-             * quotation beneath it. */
-            font-size: clamp(1rem, 4.2cqi, 2rem);
+             * quotation beneath it. Font is 20% smaller than the desktop
+             * baseline. */
+            font-size: clamp(0.8rem, 3.36cqi, 1.6rem);
             font-weight: 400;
             letter-spacing: -0.035em;
             /* Space between the words, never between the letters within them. */
@@ -329,7 +330,10 @@
         }
 
         /* The tagline is two lines. The upper carries the statement; the lower
-         * carries the quotation at two thirds of it, set close beneath. */
+         * carries the quotation at two thirds of it, set close beneath. The
+         * lower line's block of text sits at the right edge of the row
+         * (justify-self: end), but the text inside that block reads left
+         * aligned (text-align: left). */
         .tagline-block .t-sub {
             display: block;
             margin-top: 0.5em;
@@ -340,10 +344,9 @@
             word-spacing: 0.1em;
             line-height: 1.1;
             color: inherit;
-            /* Only the lower line finishes at the right side of its row. */
             grid-row: 2;
             justify-self: end;
-            text-align: right;
+            text-align: left;
         }
 
         /* ============================================================================
@@ -1131,3 +1134,54 @@
         @media (prefers-color-scheme: dark) {
             html[data-appearance="system"] { @include dark-palette; @include dark-overrides; }
         }
+
+/* ============================================================================
+ * MOBILE — viewport at or below 48rem
+ * ============================================================================
+ * Mobile only: the masthead collapses to a single column so the top row holds
+ * the logo and menu, the taglines come next, and the gadgets sit last. Header
+ * inner padding is halved, the logo grows 15%, and card padding is halved.
+ * Nothing above 48rem is touched. */
+
+@media (max-width: 48rem) {
+    /* Halve the header's inner padding: hero, logo, menu, gadget margins. */
+    .hero {
+        grid-area: 2 / 1;
+        padding: 0 0 calc(var(--edge) / 2) calc(var(--edge) / 2 + var(--logo-blind) * var(--logo-h) / 2);
+    }
+    .navbar-logo {
+        margin: calc(var(--edge) / 2) 0 0 calc(var(--edge) / 2);
+    }
+    .navbar-menu {
+        margin: calc(var(--edge) / 2) calc(var(--edge) / 2) 0 0;
+    }
+    .carousel-tools {
+        grid-area: 3 / 1;
+        justify-self: end;
+        align-self: start;
+        margin: calc(var(--edge) / 2) 0 0 0;
+    }
+
+    /* Single column masthead: row 1 holds logo + menu side by side, row 2 the
+     * taglines, row 3 the gadgets. No side column. */
+    .masthead {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto auto;
+        row-gap: var(--sp2);
+    }
+    .brandrow {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-start;
+        grid-area: 1 / 1;
+        width: 100%;
+    }
+
+    /* Logo grows 15% on mobile. */
+    html { --logo-h: clamp(4.025rem, 14.95cqi, 10.35rem); }
+
+    /* Halve card padding: the inner breathing room around card art. */
+    .art { margin: clamp(0.25rem, 1.7cqi, 1rem); }
+    .family { gap: calc(var(--gutter) / 2); }
+}

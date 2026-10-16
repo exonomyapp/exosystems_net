@@ -327,7 +327,7 @@ fn DisplayGadgets(
 fn Tagline() -> impl IntoView {
     view! {
         <div class="tagline-block">
-            <p><span class="t-stmt"><span class="t1">"Hello, World! We're building something new."</span>{" "}<span class="t2">"Private by design. Connected by nature."</span></span><span class="t-sub">"... for the software was made for the man, not the man for the software!"</span></p>
+            <p><span class="t-stmt"><span class="t1">"Hello World! We're doing something new."</span>{" "}<span class="t2">"Singular by design, connection by nature, and conscious by consensus."</span></span><span class="t-sub">"... for the software was made for the man, not the man for the software!"</span></p>
         </div>
     }
 }
