@@ -22,7 +22,7 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                 <meta charset="utf-8"/>
                 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
                 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-                <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet"/>
+                <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=Nunito:wght@200..1000&display=swap" rel="stylesheet"/>
                 <AutoReload options=options.clone() />
                 <HydrationScripts options/>
                 <MetaTags/>
@@ -327,7 +327,7 @@ fn DisplayGadgets(
 fn Tagline() -> impl IntoView {
     view! {
         <div class="tagline-block">
-            <p><span class="t-stmt"><span class="t1">"Hello World! We're doing something new."</span>{" "}<span class="t2">"Singular by design, connection by nature, and conscious by consensus."</span></span><span class="t-sub">"... for the software was made for the man, not the man for the software!"</span></p>
+            <p><span class="t-stmt"><span class="t1">"Hello World! We're doing something new."</span>{" "}<span class="t2">"Singular by design, connected by nature, and conscious by consensus."</span></span><span class="t-sub">"... for the software was made for the man, not the man for the software!"</span></p>
         </div>
     }
 }
