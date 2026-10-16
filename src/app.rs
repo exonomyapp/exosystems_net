@@ -17,7 +17,7 @@ use crate::store::{registry_rows, ModelRow};
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
         <!DOCTYPE html>
-        <html lang="en" data-appearance="system">
+        <html lang="en" data-appearance="system" data-width="normal">
             <head>
                 <meta charset="utf-8"/>
                 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
@@ -65,6 +65,8 @@ const ICON_GEAR: &str = "<path d=\"M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.3
 #[component]
 pub fn App() -> impl IntoView {
     provide_meta_context();
+    let prefs = display_prefs();
+    provide_context(prefs);
 
     view! {
         <Stylesheet id="leptos" href="/pkg/exosystems_net.css"/>
@@ -231,13 +233,25 @@ fn WidthToggle(
     set_width: WriteSignal<String>,
     apply: impl Fn() + Clone + Send + 'static,
 ) -> impl IntoView {
+    // Post-hydration gate: the server renders defaults, so the button trusts
+    // that markup on load and would keep showing it until the next click.
+    // After mount the live values take over, keeping icon, tooltip, and
+    // highlight true to the persisted choice on every load.
+    let (mounted, set_mounted) = signal(false);
+    Effect::new(move |_| set_mounted.set(true));
     view! {
-        <button type="button" class="ctl" class:active=move || width.get() == "wide"
-            title=move || if width.get() == "wide" { "Fit to margins" } else { "Full width" }
-            aria-label=move || if width.get() == "wide" { "Fit to margins" } else { "Full width" }
+        <button type="button" class="ctl" class:active=move || mounted.get() && width.get() == "wide"
+            title=move || if mounted.get() && width.get() == "wide" { "Fit to margins" } else { "Full width" }
+            aria-label=move || if mounted.get() && width.get() == "wide" { "Fit to margins" } else { "Full width" }
             on:click=move |_| { set_width.set(if width.get() == "wide" { "normal".into() } else { "wide".into() }); apply(); }>
             <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <g inner_html=move || if width.get() == "wide" { ICON_WIDTH_FIT } else { ICON_WIDTH }/>
+                {move || {
+                    if mounted.get() && width.get() == "wide" {
+                        view! { <g inner_html=ICON_WIDTH/> }.into_any()
+                    } else {
+                        view! { <g inner_html=ICON_WIDTH_FIT/> }.into_any()
+                    }
+                }}
             </svg>
         </button>
     }
@@ -265,13 +279,11 @@ pub struct DisplayPrefs {
 }
 
 /// One set of display preferences for the whole application, so every gadget
-/// instance on every surface reads and writes the same state.
+/// instance on every surface reads and writes the same state. The pair is
+/// created once in `App` and shared by context: one pair per render tree,
+/// which stays SSR-safe because no signal outlives its request owner.
 fn shared_prefs() -> DisplayPrefs {
-    use_context::<DisplayPrefs>().unwrap_or_else(|| {
-        let prefs = display_prefs();
-        provide_context(prefs);
-        prefs
-    })
+    use_context::<DisplayPrefs>().expect("DisplayPrefs provided at App root")
 }
 
 fn display_prefs() -> DisplayPrefs {
@@ -315,7 +327,7 @@ fn DisplayGadgets(
 fn Tagline() -> impl IntoView {
     view! {
         <div class="tagline-block">
-            <p><span class="t1">"Hello, World! We're building something new."</span>{" "}<span class="t2">"Private by design. Connected by nature."</span><span class="t-sub">"... for the software was made for the man, not the man for the software!"</span></p>
+            <p><span class="t-stmt"><span class="t1">"Hello, World! We're building something new."</span>{" "}<span class="t2">"Private by design. Connected by nature."</span></span><span class="t-sub">"... for the software was made for the man, not the man for the software!"</span></p>
         </div>
     }
 }
@@ -437,6 +449,33 @@ fn ModelsNavbar(show_models: bool, display_name: String, current: &'static str) 
     }
 }
 
+/// Uniform template for the section pages: the solid top bar plus the
+/// page-main shell. Each page's heading and content ride inside as children,
+/// so every section page shares one appearance and one layout.
+#[component]
+fn SectionPage(
+    show_models: bool,
+    display_name: String,
+    current: &'static str,
+    children: Children,
+) -> impl IntoView {
+    view! {
+        <ModelsNavbar show_models=show_models display_name=display_name current=current/>
+        <main class="main page-main">{children()}</main>
+    }
+}
+
+/// The flat section heading the account pages share: title over one line.
+#[component]
+fn SectionHead(title: &'static str, subtitle: Option<String>) -> impl IntoView {
+    view! {
+        <header class="page-head">
+            <h1>{title}</h1>
+            {subtitle.map(|s| view! { <p>{s}</p> })}
+        </header>
+    }
+}
+
 #[cfg(target_arch = "wasm32")]
 fn sign_challenge(secret_b58: &str, nonce: &str) -> Result<String, String> {
     let sk_bytes = bs58::decode(secret_b58.trim()).into_vec().map_err(|_| "Secret does not decode.".to_string())?;
@@ -501,12 +540,8 @@ fn SigninPage() -> impl IntoView {
     });
 
     view! {
-        <ModelsNavbar show_models=false display_name=String::new() current="signin"/>
-        <main class="main page-main">
-            <header class="page-head">
-                <h1>"Sign in."</h1>
-                <p>"Your identity lives with you. Sign in with your peer identity and stay on ExoSystems.net."</p>
-            </header>
+        <SectionPage show_models=false display_name=String::new() current="signin">
+            <SectionHead title="Sign in." subtitle=Some("Your identity lives with you. Sign in with your peer identity and stay on ExoSystems.net.".to_string())/>
             <section class="page-cards">
                 <div class="family-card">
                     <h3>"Known identities"</h3>
@@ -560,7 +595,7 @@ fn SigninPage() -> impl IntoView {
                     })}
                 </div>
             </section>
-        </main>
+        </SectionPage>
     }
 }
 
@@ -601,11 +636,8 @@ fn DocsPage() -> impl IntoView {
             {move || {
                 let named = models_gate.get().flatten().map(|v| (v.model_updates, v.did)).unwrap_or((false, String::new()));
                 view! {
-                    <ModelsNavbar show_models=named.0 display_name=named.1 current="docs"/>
-                    <main class="main page-main">
-                        <header class="page-head">
-                            <h1>"Docs."</h1>
-                        </header>
+                    <SectionPage show_models=named.0 display_name=named.1 current="docs">
+                        <SectionHead title="Docs." subtitle=None/>
                         <section class="page-cards">
                             {move || Suspend::new(async move {
                                 match gate.get() {
@@ -651,7 +683,7 @@ fn DocsPage() -> impl IntoView {
                                 }
                             })}
                         </section>
-                    </main>
+                    </SectionPage>
                 }
             }}
         </Suspense>
@@ -675,19 +707,19 @@ fn ModelsPage() -> impl IntoView {
                 Some(v) if v.model_updates => {
                     let name = v.did.clone();
                     view! {
-                        <ModelsNavbar show_models=true display_name=name current="models"/>
-                        <main class="main page-main">
+                        <SectionPage show_models=true display_name=name current="models">
                             <section class="runs"><h2>"Runs"</h2></section>
                             <section class="models">
                                 <h2>"Models"</h2>
                                 <ModelsTable/>
                             </section>
-                        </main>
+                        </SectionPage>
                     }.into_any()
                 }
                 _ => view! {
-                    <ModelsNavbar show_models=false display_name=String::new() current="models"/>
-                    <main class="main page-main"><p><A href="/signin">"Sign in with a delegated identity to read the registry."</A></p></main>
+                    <SectionPage show_models=false display_name=String::new() current="models">
+                        <p><A href="/signin">"Sign in with a delegated identity to read the registry."</A></p>
+                    </SectionPage>
                 }.into_any(),
             })}
         </Suspense>
@@ -981,20 +1013,10 @@ fn SettingsPage() -> impl IntoView {
                     let admin = v.admin;
                     let did = v.did.clone();
                     let named = (v.model_updates, v.did.clone());
+                    let apply = apply.clone();
                     view! {
-<ModelsNavbar show_models=named.0 display_name=named.1 current="settings"/>
-                        <main class="main page-main">
-                            <header class="page-head">
-                                <div class="head-row">
-                                    <h1>"Settings."</h1>
-                                    <p>{format!("Signed in as {did}")}</p>
-                                    <button class="secondary" on:click=move |_| {
-                                        let t = read_token().unwrap_or_default();
-                                        let d = active_did().unwrap_or_default();
-                                        logout.dispatch((t, d));
-                                    }>"Sign out"</button>
-                                </div>
-                            </header>
+<SectionPage show_models=named.0 display_name=named.1 current="settings">
+                        <SectionHead title="Settings." subtitle=Some(format!("Signed in as {did}"))/>
                             <section class="page-cards">
                                 <div class="family-card">
                                     <h3>"Display"</h3>
@@ -1019,6 +1041,11 @@ fn SettingsPage() -> impl IntoView {
                                         <button on:click=move |_| {
                                             if let Some(t) = read_token() { profile_action.dispatch((t, name_edit.get(), String::new())); }
                                         }>"Save profile"</button>
+                                        <button class="secondary" on:click=move |_| {
+                                            let t = read_token().unwrap_or_default();
+                                            let d = active_did().unwrap_or_default();
+                                            logout.dispatch((t, d));
+                                        }>"Sign out"</button>
                                     </div>
                                     <h4>"Signed-in sessions"</h4>
                                     <div class="row-list">
@@ -1086,19 +1113,18 @@ fn SettingsPage() -> impl IntoView {
                                     </div>
                                 })}
                             </section>
-                        </main>
+                        </SectionPage>
                     }.into_any()
                 }
-                None => view! {
-                    <ModelsNavbar show_models=false display_name=String::new() current="settings"/>
-                    <main class="main page-main">
-                        <header class="page-head">
-                            <h1>"Settings."</h1>
-                        </header>
+                None => {
+                    let apply = apply.clone();
+                    view! {
+                    <SectionPage show_models=false display_name=String::new() current="settings">
+                        <SectionHead title="Settings." subtitle=Some("Choices persist in browser storage for this browser.".to_string())/>
                         <section class="page-cards">
                             <div class="family-card">
                                 <h3>"Display"</h3>
-                                <p>"Appearance follows the system or forces light or dark; content width fits the margins or fills the screen. Choices persist in browser storage for this browser."</p>
+                                <p>"Appearance follows the system or forces light or dark; content width fits the margins or fills the screen."</p>
                                 <div class="field">
                                     <label>"Appearance"</label>
                                     <ThemeDrop appearance=appearance set_appearance=set_appearance apply=apply.clone()/>
@@ -1107,11 +1133,13 @@ fn SettingsPage() -> impl IntoView {
                                     <label>"Content width"</label>
                                     <WidthToggle width=width set_width=set_width apply=apply.clone()/>
                                 </div>
+                                <p><A href="/signin">"Go to sign in"</A></p>
                             </div>
                         </section>
-                        <p><A href="/signin">"Go to sign in"</A></p>
-                    </main>
-                }.into_any(),
+                    </SectionPage>
+                    }
+                    .into_any()
+                }
             })}
         </Suspense>
     }
