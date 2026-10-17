@@ -28,11 +28,21 @@
          * ============================================================================ */
 
         :root {
-            --bg: #f3f4f7;
-            --surface: #ffffff;
+            /* The page colour is set once, here, for each appearance. The
+             * header carries no background of its own, so the photographs
+             * dissolve into whatever this value is. Cards sit on a soft grey
+             * rather than white. */
+            --bg: #b0ada5;
+            --surface: #6f7484;
+            --surface-border: rgba(15, 23, 42, 0.10);
+            --surface-border-strong: rgba(15, 23, 42, 0.20);
             --text: #1b1f27;
-            --text-secondary: #3f4753;
-            --text-muted: #5c6570;
+            /* Darkening the page and the card faces pulls the contrast out from
+             * under the softer two text colours, so they move with the surfaces
+             * and hold their separation: on the card face these read 4.9:1 and
+             * 4.5:1, where before the darker of the two fell to 3.0:1. */
+            --text-secondary: #22272e;
+            --text-muted: #262b33;
             --border: #d9dde5;
             --accent: #1f5fc4;
             --accent-soft: #dbe7fb;
@@ -155,10 +165,14 @@
             container: masthead / inline-size;
         }
 
+        /* The wash holds the type legible over the photograph, then releases across
+         * the lower third so the page's own colour is what shows through the
+         * fade rather than a second grey belonging to the header. The header
+         * itself carries no background. */
         .masthead .screen {
             grid-area: 1 / 1 / -1 / -1;
             z-index: 0;
-            background: linear-gradient(to bottom, rgba(2, 6, 23, 0.62) 0%, rgba(2, 6, 23, 0.42) 55%, rgba(2, 6, 23, 0.58) 100%);
+            background: linear-gradient(to bottom, rgba(2, 6, 23, 0.62) 0%, rgba(2, 6, 23, 0.42) 20%, rgba(2, 6, 23, 0.42) 66.667%, rgba(2, 6, 23, 0) 100%);
             pointer-events: none;
         }
 
@@ -172,6 +186,12 @@
             background-position: 50% 33.3333%;
             opacity: 0;
             animation: heroFade 26s linear infinite;
+            /* The photograph dissolves into the page instead of stopping at a
+         * hard edge. It holds full weight until the clear band below the
+         * furniture has begun, then runs out across that band and is gone
+         * before the header's own edge. */
+            -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 66.667%, transparent 100%);
+            mask-image: linear-gradient(to bottom, #000 0%, #000 66.667%, transparent 100%);
         }
         .slide-1 { background-image: url('/hero/slide-1.jpg'); }
         .slide-2 { background-image: url('/hero/slide-2.jpg'); animation-delay: 13s; }
@@ -241,9 +261,16 @@
          * row side by side, the gadgets take their own track beneath the hero,
          * so neither can collide with the other at any width. Where there is
          * room, the gadgets float over the masthead and the hero reserves their
-         * width. Nothing here names a device or an orientation. */
+         * width. Nothing here names a device or an orientation.
+         *
+         * The stacking level has to outrank the card column below. The gadgets
+         * are a grid item, so a level here opens a stacking context and traps
+         * everything inside it — the drop panel carries 31 and the backdrop 30,
+         * but neither can climb past this box. The card column sits at 3 to lie
+         * over the photograph, which swallowed the drop panel whole whenever the
+         * panel reached down across the first card. */
         .carousel-tools {
-            z-index: 2;
+            z-index: 4;
             max-width: 100%;
         }
 
@@ -291,7 +318,7 @@
              * can carry it, leaving exactly two lines: the statement and the
              * quotation beneath it. Font is 20% smaller than the desktop
              * baseline. */
-            font-size: clamp(0.8rem, 3.36cqi, 1.6rem);
+            font-size: clamp(0.88rem, 3.696cqi, 1.76rem);
             font-family: 'Nunito', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             font-weight: 400;
             letter-spacing: -0.035em;
@@ -353,6 +380,19 @@
         }
 
         html[data-width="normal"] .main { max-width: var(--measure); margin-inline: auto; }
+
+        /* The card family on the home page carries no inset above it and is
+         * lifted so the cards sit ON the header rather than below it. The
+         * header keeps its full height and runs on behind them; the cards
+         * carry a stacking level above the masthead furniture so they read as
+         * lying over the photograph, covering its last stretch while it is
+         * still dissolving into the page. The section pages are untouched. */
+        .main:not(.page-main) {
+            padding-top: 0;
+            margin-top: -4rem;
+            position: relative;
+            z-index: 3;
+        }
 
         /* ============================================================================
          * CARD FAMILY — the flip-card grid
@@ -419,8 +459,8 @@
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
             overflow: hidden;
-            background: #ece9f4;
-            border: 1px solid var(--border);
+            background: var(--surface);
+            border: 1px solid var(--surface-border);
             border-radius: var(--radius);
             display: grid;
             grid-template-columns: minmax(0, 1fr);
@@ -433,8 +473,8 @@
             font-size: clamp(0.85rem, 3.9cqi, 1.45rem);
         }
         .flip:hover .face {
-            border-color: #cbd5e1;
-            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.04);
+            border-color: var(--surface-border-strong);
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 4px 12px rgba(15, 23, 42, 0.06);
         }
 
         /* CARD FRONT — art with breathing room around it.
@@ -445,7 +485,7 @@
             grid-template-columns: minmax(0, 1fr);
             gap: 0;
             padding: 0;
-            background: #ece9f4;
+            background: var(--surface);
         }
 
         .face.front h3 {
@@ -512,7 +552,7 @@
             /* Measured against the card, not the text, so the margin around the
              * text holds its proportion instead of vanishing as the card grows. */
             padding: clamp(1.6rem, 5.6cqi, 3.4rem);
-            background: #ecf5e6;
+            background: var(--surface);
         }
 
         .face.front .art,
@@ -1176,16 +1216,24 @@
 
 .hero {
     grid-area: 2 / 1;
-    /* Even inset on every side; the tagline no longer reserves the logo's
-     * transparent left margin. */
-    padding: var(--edge-narrow) var(--edge-narrow);
+    /* The tagline keeps its room beneath the logo — three insets of it — so the
+     * photograph reads between the pair instead of the two crowding. The
+     * header's extra height is added further down, under the gadgets, so the
+     * cards and the gadgets both gain room without lifting the tagline. */
+    padding: calc(var(--edge-narrow) * 3) var(--edge-narrow) var(--edge-narrow) var(--edge-narrow);
 }
 
 .carousel-tools {
     grid-area: 3 / 1;
     justify-self: end;
     align-self: start;
-    margin: 0 var(--edge-narrow) var(--edge-narrow) 0;
+    /* The gadgets must rest above the cards, not behind them. The cards are
+     * lifted onto the header by 4rem, so the gadgets need a bottom margin
+     * larger than that to clear it: 4 insets of 1.5rem is 6rem, which leaves
+     * the gadgets a full 2rem above the top of the first card at every
+     * measure. This margin is also what makes the header taller — it adds
+     * height below the gadgets for the cards to sit over. */
+    margin: 0 var(--edge-narrow) calc(var(--edge-narrow) * 4) 0;
 }
 
 /* Card breathing room halves while the masthead is one column. */
@@ -1229,14 +1277,14 @@
 
     .hero {
         grid-area: 2 / 1;
-        padding: 0 0 var(--edge) calc(var(--edge) + var(--logo-blind) * var(--logo-h));
+        padding: 0 0 calc(var(--edge) * 3) calc(var(--edge) + var(--logo-blind) * var(--logo-h));
     }
 
     .carousel-tools {
         grid-area: 2 / 2;
         justify-self: end;
         align-self: end;
-        margin: 0 var(--edge) var(--edge) 0;
+        margin: 0 var(--edge) calc(var(--edge) * 2) 0;
     }
 
     .family { gap: var(--gutter); }
