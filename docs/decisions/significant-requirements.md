@@ -4,7 +4,12 @@ Requirements that shape the architecture, each with its pass/fail
 measure. They are the standing tests behind the decision records;
 a record is accepted only when its requirements pass.
 
-## R1 — Three accounts prove the gate, the sharing control, and the permission system
+These are SR1 to SR5. The five requirements are cited that way
+throughout the log and in the fitness checks. A decision record is
+numbered in the log's index and a record's dependencies are written R
+followed by that record's number, so the two never read alike.
+
+## SR1 — Three accounts prove the gate, the sharing control, and the permission system
 
 Pass: in a real browser, the docs view carries a sharing control per
 document, working like sharing on mainstream docs: the author names
@@ -18,7 +23,7 @@ per-document setting, never a software default. The stranger case is
 what proves the permission system (Meadowcap) enforces as well as grants. Records: `exosystems-exoauth.md`,
 `grant-document-access-per-identity.md`.
 
-## R2 — The gate resolves against the node's live SQLite identity store
+## SR2 — The gate resolves against the node's live SQLite identity store
 
 Pass: sign-in checks a live node-side store of conscired identities
 and capability delegations, built the spec way: consciring through
@@ -30,7 +35,7 @@ kept in the user's own Willow namespace and synced to conscired
 nodes, never decrypted by the node (identity foundation §§7–8). No
 static allowlist anywhere: `allowed_dids.json` is deleted and boot
 plus sign-in read the store (pending row 7). Manual setup mirrors a
-fresh install: generate the node's helper identity, conscire each R1
+fresh install: generate the node's helper identity, conscire each SR1
 account through the endpoint, and persist the resulting delegations,
 binding proofs, and namespaces — the same shape a fresh ExoTalk
 install plus its own Lighthouse Conscia node produces on its own.
@@ -50,7 +55,7 @@ aggregation, so the 3D index is built in code above the key-value
 layer). Node relational state — identities, delegations, binding
 proofs, publishable metadata — lives in SQLite tables beside it.
 
-## R3 — No UI code counts as proven until a real browser clicks it
+## SR3 — No UI code counts as proven until a real browser clicks it
 
 Pass: the crate loads in a real browser that navigates between pages
 and activates its controls with zero console errors. Server HTML
@@ -58,7 +63,7 @@ rendering alone passes nothing. Styled and unstyled sources
 compete on equal footing; neither is mandated or barred. Record:
 `style-bespoke-over-behavior-primitives.md`.
 
-## R4 — Node, store, and client prove the gate as one
+## SR4 — Node, store, and client prove the gate as one
 
 Pass: the local build conscires to the instance node, publishes a
 test entry locally, syncs, reads it back through the gated docs view
@@ -68,7 +73,7 @@ then revokes and confirms sync stops. Records:
 `keep-local-synced-willow-store.md`,
 `conscire-local-exotalk-with-instance-node.md`.
 
-## R5 — Secret ownership at sign-in
+## SR5 — Secret ownership at sign-in
 
 Pass: sign-in completes a challenge-response round against the
 identity secret before the store check. Unbuilt; tracked in

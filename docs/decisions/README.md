@@ -25,7 +25,7 @@ between them are the way they are.
 | 26 | [Verify replication on each Archon upgrade](verify-replication-on-each-archon-upgrade.md) | Proposed | 2026-09-29 |  |
 | 25 | [Route tool storage by active identity](route-tool-storage-by-active-identity.md) | Proposed | 2026-09-29 |  |
 | 24 | [Replicate Archon rows to the Willow store](replicate-archon-rows-to-willow-store.md) | Proposed | 2026-09-29 |  |
-| 23 | [Set up the Brevo mail service for node email](set-up-brevo-mail-service.md) | Proposed | 2026-09-29 |  |
+| 23 | [Exosystems email services](exosystems-email-services.md) | Proposed | 2026-10-21 |  |
 | 22 | [Send triggered administrative emails from the node](send-triggered-administrative-emails-from-node.md) | Proposed | 2026-09-29 |  |
 | 21 | [Plan repeatable deployment of the three Conscia flavors](plan-repeatable-deployment-of-three-flavors.md) | Proposed | 2026-09-29 |  |
 | 20 | [Resolve two-device write conflicts by union](resolve-two-device-write-conflicts-by-union.md) | Proposed | 2026-09-29 |  |
@@ -48,13 +48,25 @@ between them are the way they are.
 | 3 | [Set up GitHub repository and CI pipeline](set-up-github-repo-and-ci-pipeline.md) | Proposed | 2026-09-27 |  |
 | 2 | [Generate peer identity early and sign in with it](exosystems-exoauth.md) | Accepted | 2026-09-26 | R4, R5, R6, R7, R9, R11 |
 | 1 | [Use Leptos 0.8 with server rendering](use-leptos-0-8-with-ssr.md) | Accepted | 2026-09-26 |  |
+
+## Notation
+
+The **Deps** column names the other decision records a record rests on, each
+written R followed by that record's number in the No. column — R2 is record
+2. A record's own number appears in the No. column.
+
+The five significant requirements are **SR1 to SR5** and are cited that way in
+the records and in the fitness checks. R followed by a number always means a
+decision record; SR followed by a number always means a requirement. The two
+never share a token.
+
 ## Companion documents
 
 Not decision records. Supporting views over the log:
 
 | Document | When to read it |
 |----------|-----------------|
-| [Significant requirements](significant-requirements.md) | To see the five pass/fail tests (R1–R5) every record must satisfy |
+| [Significant requirements](significant-requirements.md) | To see the five pass/fail tests (SR1–SR5) every record must satisfy |
 | [Pending decisions](pending.md) | To see the seven open decisions, what unblocks each, and where each lands |
 | [System context sheet](diagrams/context.html) | To see people, site, node, and local client on one drafting sheet (C4-01) |
 | [Container sheet](diagrams/container.svg) | To see the ten inner containers and their flows (C4-02) |

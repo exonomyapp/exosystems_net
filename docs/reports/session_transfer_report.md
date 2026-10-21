@@ -1,6 +1,6 @@
 # Session Transfer Report — Exosystems.net
 
-> From session: ses_ec342a6cdffeijt61QAzqHglwi
+> From session: ses_ea0d884a4ffec4a37Hao6LKiSp
 
 ## What Was Shipped
 
@@ -32,6 +32,18 @@ Two structural defects were corrected. The masthead had declared itself a query 
 
 The Model Updates feature moved into the main application and the `model-updates/` folder retired: the models interface is a route of Exosystems.net with the shared main-page session, the delegation gate, and the shared gadgetry. Git commit `659caaa` records "Shape B: Model Updates merged into the main Leptos site with single sign-on, plus push-to-deploy workflow" (2026-10-09).
 
+## Exosystems Email Services
+
+The Exosystems mail system is specified in `docs/decisions/exosystems-email-services.md`, which replaced the earlier Brevo-specific decision record and carries the whole arrangement.
+
+Brevo carries the outbound leg. The account holds the sending domain `exosystems.net`, authenticated under domain id `6aada8b5ee7878abf5091646` with DNS as the authentication method; the sender identities `support@exosystems.net`, displayed as ExoSupport, and `noreply@exosystems.net`; the SMTP key; the transactional suppression list of address strings; and the delivery events. It holds no contact records, and its marketing products and campaign services go unused. The relay is enabled at `smtp-relay.brevo.com` on port 587 with the login `b9ff03001@smtp-brevo.com`, and transactional sending is confirmed active on the account. The credential is held on the instance in `/opt/exosystems_net/env` as `BREVO_SMTP_LOGIN` and `BREVO_SMTP_KEY`, with a copy in the repository's operator-held `secrets/` directory. The account's authorized address list holds the instance's `43.157.89.31` and the address the workstation presents while it is on a mobile hotspot, which the carrier reassigns.
+
+The DNS zone at Hostinger is complete and live. It carries the SPF record with `include:spf.brevo.com`, the Brevo ownership code, both DKIM records, the DMARC record at `p=reject` with the report address `dmarc@exosystems.net`, the MX to `mail.exosystems.net`, the apex and mail addresses, the Google Postmaster Tools verification record, and the Let's Encrypt CAA pair, each with a five-minute time to live. The Postmaster Tools registration for `exosystems.net` is verified under the owner `exonomyapp@gmail.com`, and its health reads "Not enough data" until the sending volume rises.
+
+A message sent from `support@exosystems.net` on 2026-10-21 was delivered with all three checks passing: `dkim=pass` signed by `exosystems.net` through the `brevo2` selector, `spf=pass` on Brevo's sending host `77.32.148.25`, and `dmarc=pass` with the header domain aligned. The message identifier was `<202610211726.84771262764@smtp-relay.mailin.fr>`.
+
+The instance carries the mail stack and the domain's mailboxes. OpenCloudOS 9.6 holds Postfix 3.8.5, Dovecot 2.3.19.1, Roundcube 1.6.18 and PHP 8.3.31 available for installation, and the certificate renewal timer now checks every twelve hours with one hour of randomised delay and renews each certificate twenty-one days before expiry.
+
 ## What's Next
 
 Owner onboarding first: the owner creates an identity on the main sign-in page, receives the first Admin delegation through the bootstrap path, and grants from the owner tools, which unlocks the gated models route for real use. Next the provider admission work: free-name filter plus live endpoint testing against the hosted database, then a full proving round with the registry and history counts refreshed into the README.
@@ -48,6 +60,8 @@ The UI pass continues alongside against the reference file: gadgetry stays real 
 
 Layout claims are settled by measurement rather than by reading the stylesheet. A headless browser renders the local build at device viewports in both orientations and reports computed grids, insets and margins; every breakpoint decision in the masthead was chosen from those readings, and the device spread from 360px through 1920px was measured against each candidate threshold before one was taken. Reading the stylesheet alone did not predict the rendered result: the container-query self-reference looked correct in the source and changed nothing on the page.
 
+The Exosystems mail system continues with the work named in the decision record: the Postfix, Dovecot and Roundcube installation on the instance with the inbound port 25 rule in the Lighthouse firewall; the `mail.exosystems.net` certificate and the nginx host that serves Roundcube; the sending path in the node with the Brevo webhook subscription, the suppression list and the opt-out history; the Rust aggregate-report parser with its authorized-source registry, its three report types and its eight additions to parsedmarc's model; and the mail-operations section of the Settings page. The instance hardening review follows the mail stack installation, with `docs/harden.md` updated for the new services.
+
 ## Where Things Live
 
 - `/home/exocrat/code/exosystems_net/src/app.rs` — routes, FloatingGadgets, ModelsNavbar, FlipCard, DisplayGadgets with ThemeDrop and WidthToggle, sign-in, settings, models table, docs.
@@ -57,5 +71,6 @@ Layout claims are settled by measurement rather than by reading the stylesheet. 
 - `/home/exocrat/code/exosystems_net/style/main.scss` — the full theme: grid shell, carousel, flip cards, gadgets, dark palettes.
 - `/home/exocrat/code/exosystems_net/design-reference-index.html` — the visual reference the pages build toward.
 - `/home/exocrat/code/exosystems_net/docs/decisions/` — the decision log, including the settings-console record and the uncommitted hardening records.
+- `/home/exocrat/code/exosystems_net/docs/decisions/exosystems-email-services.md` — the Exosystems email services decision record: the Brevo relay and its credential, the inbound stack, the domain's DNS, the report and suppression records, and the Settings page surfaces.
 - `/home/exocrat/code/exosystems_net/tools/model-rounds/` — model verification scripts (create_models_db.py, update_models_db.py, and related).
 - `/home/exocrat/code/exosystems_net/docs/harden.md` — hardening guide, git-ignored, local repo only, not deployed to exosystems.net or any remote.

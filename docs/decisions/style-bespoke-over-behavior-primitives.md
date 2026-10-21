@@ -39,3 +39,15 @@ Trial evidence: `trial-motion` and `render-motion` in the bench at
 `logs-render-motion.txt`). Animation code ships in the browser
 bundle only and never executes during server rendering; any motion
 crate re-enters the stack through the bench before use.
+
+## Addendum 2026-10-19 — the visitor's choices before the first paint
+
+The server renders static HTML and cannot know what the visitor's browser
+holds, so what only the browser knows is applied by the browser. The stored
+display choices reach the root element before the first paint, so the page
+never shows a theme or a content width it is about to leave. The root
+element's `data-appearance` and `data-width` are the single source of truth
+for those choices, and the stylesheet draws the palette and the glyphs that
+name the choices from them alike, so the two cannot disagree. Browser-only
+code, as with the motion above, ships in the browser and never executes
+during server rendering.

@@ -17,7 +17,7 @@ else
   pass "F1 no motion code in server sources"
 fi
 
-# F2 — two-identity gate seed (exosystems-exoauth.md, R2):
+# F2 — two-identity gate seed (exosystems-exoauth.md, SR2):
 # allowed_dids.json must hold at least two did:peer entries.
 DIDS=$(python3 -c "
 import json,sys
@@ -47,7 +47,7 @@ else
   fail "F3 index missing:$MISSING"
 fi
 
-# F4 — gate routes present (exosystems-exoauth.md, R1):
+# F4 — gate routes present (exosystems-exoauth.md, SR1):
 # the app must expose sign-in and the gated docs view.
 if grep -q '"signin"' "$ROOT/src/app.rs" && grep -q '"docs"' "$ROOT/src/app.rs" && grep -q '"models"' "$ROOT/src/app.rs" && grep -q '"settings"' "$ROOT/src/app.rs"; then
   pass "F4 sign-in, docs, models, settings routes present"

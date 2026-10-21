@@ -14,6 +14,20 @@ use crate::auth::{
 };
 use crate::store::{registry_rows, ModelRow};
 
+/// The visitor's stored display choices, applied by the browser to the root
+/// element before the first paint.
+///
+/// The server renders static HTML and cannot know what the visitor's browser
+/// holds, so without this the page paints in the default theme at the default
+/// content width and then jumps when the client corrects it. The direction the
+/// site takes is a persisted choice applied before the first paint, and this
+/// is where that happens.
+///
+/// It is browser-only code: it ships in the markup and runs in the browser,
+/// and it never runs during server rendering. Single quotes keep the text free
+/// of the characters an HTML pass would rewrite.
+const DISPLAY_BOOTSTRAP: &str = "(function(){try{var a=localStorage.getItem('mu_appearance');if(a){document.documentElement.setAttribute('data-appearance',a);}var w=localStorage.getItem('mu_width');if(w){document.documentElement.setAttribute('data-width',w);}}catch(e){}})();";
+
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
         <!DOCTYPE html>
@@ -24,6 +38,7 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                 <link rel="preconnect" href="https://fonts.googleapis.com"/>
                 <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=Nunito:wght@200..1000&display=swap" rel="stylesheet"/>
                 <AutoReload options=options.clone() />
+                <script nonce=use_nonce()>{DISPLAY_BOOTSTRAP}</script>
                 <HydrationScripts options/>
                 <MetaTags/>
             </head>
@@ -62,11 +77,25 @@ const ICON_WIDTH: &str = "<path d=\"M8 3H5a2 2 0 0 0-2 2v3\"/><path d=\"M21 8V5a
 const ICON_WIDTH_FIT: &str = "<path d=\"M8 3v3a2 2 0 0 1-2 2H3\"/><path d=\"M21 8h-3a2 2 0 0 1-2-2V3\"/><path d=\"M3 16h3a2 2 0 0 1 2 2v3\"/><path d=\"M16 21v-3a2 2 0 0 1 2-2h3\"/>";
 const ICON_GEAR: &str = "<path d=\"M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/>";
 
+/// Whether the client has taken over from the server's markup.
+///
+/// The server renders static HTML and cannot know what the visitor's browser
+/// holds, so the first client render has to match what the server sent or
+/// hydration leaves the two disagreeing. Anything that renders a value the
+/// server cannot know waits for this flag before it shows the real thing.
+/// There is one flag for the whole application: a per-component copy would
+/// drift, and the drift is invisible until a page is reloaded.
+#[derive(Clone, Copy)]
+pub struct ClientReady(pub ReadSignal<bool>);
+
 #[component]
 pub fn App() -> impl IntoView {
     provide_meta_context();
     let prefs = display_prefs();
     provide_context(prefs);
+    let (client_ready, set_client_ready) = signal(false);
+    Effect::new(move |_| set_client_ready.set(true));
+    provide_context(ClientReady(client_ready));
 
     view! {
         <Stylesheet id="leptos" href="/pkg/exosystems_net.css"/>
@@ -164,19 +193,47 @@ fn FloatingGadgets(identity: Resource<Option<IdentityState>>) -> impl IntoView {
     }
 }
 
-fn theme_icon(v: &str) -> &'static str {
-    match v {
-        "light" => ICON_SUN,
-        "dark" => ICON_MOON,
-        _ => ICON_MONITOR,
-    }
+/// The three themes, each with the glyph that stands for it and the name it
+/// carries. The name is the one the root element holds in `data-appearance`,
+/// the one the stylesheet keys on and the one the browser stores, so a theme
+/// is named in one place and cannot drift from its own name.
+const THEMES: [(&str, &str, &str); 3] = [
+    ("light", ICON_SUN, "Light theme"),
+    ("dark", ICON_MOON, "Dark theme"),
+    ("system", ICON_MONITOR, "System theme"),
+];
+
+/// The name, glyph and label of a theme.
+fn theme(v: &str) -> (&'static str, &'static str, &'static str) {
+    THEMES
+        .iter()
+        .find(|(name, _, _)| *name == v)
+        .copied()
+        .unwrap_or(THEMES[2])
 }
 
 fn theme_label(v: &str) -> &'static str {
-    match v {
-        "light" => "Light theme",
-        "dark" => "Dark theme",
-        _ => "System theme",
+    theme(v).2
+}
+
+/// The glyph for a theme, marked with the theme's name so the stylesheet can
+/// show the one the visitor's choice names. The class prefix separates the
+/// trigger's glyphs, which the stylesheet switches between, from the options'
+/// glyphs, which are always shown.
+fn theme_glyph(v: &str, prefix: &str) -> impl IntoView {
+    let (name, glyph, _) = theme(v);
+    view! { <g class=format!("{prefix} {prefix}-{name}") inner_html=glyph/> }
+}
+
+/// All three glyphs, one of them shown: the stylesheet shows the one the root
+/// element's `data-appearance` names. The visitor's choice reaches the root
+/// element before the first paint, so the icon is right from the first frame
+/// and the client never has to correct the server's markup.
+fn theme_icons() -> impl IntoView {
+    view! {
+        {THEMES.iter().map(|(name, glyph, _)| view! {
+            <g class=format!("ti ti-{name}") inner_html=*glyph/>
+        }).collect::<Vec<_>>()}
     }
 }
 
@@ -188,14 +245,26 @@ fn ThemeDrop(
 ) -> impl IntoView {
     let (drop_open, set_drop_open) = signal(false);
     let apply_panel = apply;
+    let client = use_context::<ClientReady>().expect("ClientReady provided at App root");
+    // The tooltip and the accessible name are text the server cannot know, so
+    // they wait for the client. The glyph beside them does not: the
+    // stylesheet reads it from the root element, which the browser has
+    // already set before the first paint.
+    let label = move || {
+        if client.0.get() {
+            theme_label(&appearance.get())
+        } else {
+            theme_label("system")
+        }
+    };
     view! {
         <span class="icon-drop-wrap">
-            <button type="button" class="ctl"
-                title=move || theme_label(&appearance.get())
-                aria-label=move || theme_label(&appearance.get())
+            <button type="button" class="ctl ctl-theme"
+                title=move || label()
+                aria-label=move || label()
                 on:click=move |_| set_drop_open.set(!drop_open.get())>
                 <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <g inner_html=move || theme_icon(&appearance.get())/>
+                    {theme_icons()}
                 </svg>
             </button>
             {move || drop_open.get().then(|| {
@@ -215,7 +284,7 @@ fn ThemeDrop(
                                         set_drop_open.set(false);
                                     }>
                                     <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <g inner_html=theme_icon(v)/>
+                                        {theme_glyph(v, "oi")}
                                     </svg>
                                 </button>
                             }
@@ -233,27 +302,30 @@ fn WidthToggle(
     set_width: WriteSignal<String>,
     apply: impl Fn() + Clone + Send + 'static,
 ) -> impl IntoView {
-    // Post-hydration gate: the server renders defaults, so the button trusts
-    // that markup on load and would keep showing it until the next click.
-    // After mount the live values take over, keeping icon, tooltip, and
-    // highlight true to the persisted choice on every load.
-    let (mounted, set_mounted) = signal(false);
-    Effect::new(move |_| set_mounted.set(true));
+    // The server renders defaults, so the button trusts that markup on load
+    // and would keep showing it until the next click. After the client has
+    // taken over, the live values take over, keeping the tooltip true to the
+    // persisted choice on every load.
+    let client = use_context::<ClientReady>().expect("ClientReady provided at App root");
     view! {
-        <button type="button" class="ctl" class:active=move || mounted.get() && width.get() == "wide"
-            title=move || if mounted.get() && width.get() == "wide" { "Fit to margins" } else { "Full width" }
-            aria-label=move || if mounted.get() && width.get() == "wide" { "Fit to margins" } else { "Full width" }
+        <button type="button" class="ctl ctl-width" class:active=move || client.0.get() && width.get() == "wide"
+            title=move || if client.0.get() && width.get() == "wide" { "Fit to margins" } else { "Full width" }
+            aria-label=move || if client.0.get() && width.get() == "wide" { "Fit to margins" } else { "Full width" }
             on:click=move |_| { set_width.set(if width.get() == "wide" { "normal".into() } else { "wide".into() }); apply(); }>
             <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                {move || {
-                    if mounted.get() && width.get() == "wide" {
-                        view! { <g inner_html=ICON_WIDTH/> }.into_any()
-                    } else {
-                        view! { <g inner_html=ICON_WIDTH_FIT/> }.into_any()
-                    }
-                }}
+                {width_icons()}
             </svg>
         </button>
+    }
+}
+
+/// Both width glyphs, one of them shown: the stylesheet shows the one the
+/// root element's `data-width` names, the same way the theme glyph follows
+/// `data-appearance`.
+fn width_icons() -> impl IntoView {
+    view! {
+        <g class="wi wi-wide" inner_html=ICON_WIDTH/>
+        <g class="wi wi-normal" inner_html=ICON_WIDTH_FIT/>
     }
 }
 

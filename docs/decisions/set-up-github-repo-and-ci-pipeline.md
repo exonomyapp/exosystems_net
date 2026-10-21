@@ -27,6 +27,6 @@ on pull request and on push to main, before build: F1 motion-free
 server sources, F2 two-identity allowlist seed, F3 decision index
 completeness, F4 sign-in and gated-docs routes present. A failing
 check stops the run so broken decisions never deploy. The live
-browser proofs (R1–R3, R5 in `significant-requirements.md`) stay
+browser proofs (SR1–SR3, SR5 in `significant-requirements.md`) stay
 manual until the pipeline owns a browser runner; wiring that runner
 is a follow-on to row 2 of `pending.md`.

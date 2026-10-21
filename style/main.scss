@@ -696,6 +696,24 @@
         .icon-drop-wrap { position: relative; display: inline-grid; justify-self: start; }
         .drop-backdrop { position: fixed; inset: 0; z-index: 30; }
 
+        /* The theme glyph is a function of the root element's appearance, the
+         * same way the whole palette is: the three glyphs sit in the markup
+         * and the stylesheet shows the one the visitor's choice names. The
+         * choice reaches the root element before the first paint, so the icon
+         * is right from the first frame and the client never has to correct
+         * the server's markup. The options in the drop carry their own class
+         * and are always shown. */
+        .ctl-theme .ti { display: none; }
+        html[data-appearance="light"] .ctl-theme .ti-light,
+        html[data-appearance="dark"] .ctl-theme .ti-dark,
+        html[data-appearance="system"] .ctl-theme .ti-system { display: inline; }
+
+        /* The width glyph follows the root element the same way, so the
+         * content width and the icon that names it cannot disagree. */
+        .ctl-width .wi { display: none; }
+        html[data-width="wide"] .ctl-width .wi-wide,
+        html[data-width="normal"] .ctl-width .wi-normal { display: inline; }
+
         .icon-drop-panel {
             position: absolute;
             top: calc(100% + var(--sp4));
