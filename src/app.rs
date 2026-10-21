@@ -28,6 +28,25 @@ use crate::store::{registry_rows, ModelRow};
 /// of the characters an HTML pass would rewrite.
 const DISPLAY_BOOTSTRAP: &str = "(function(){try{var a=localStorage.getItem('mu_appearance');if(a){document.documentElement.setAttribute('data-appearance',a);}var w=localStorage.getItem('mu_width');if(w){document.documentElement.setAttribute('data-width',w);}}catch(e){}})();";
 
+/// The display bootstrap as it is rendered into the document head.
+///
+/// The head is rendered by the server, and the browser build never renders
+/// it — hydration mounts the body alone — so the Content Security Policy
+/// nonce belongs to the server rendering. The server build asks Leptos for
+/// the nonce it is rendering under, and the browser build renders the
+/// script without one.
+#[cfg(feature = "ssr")]
+fn display_bootstrap() -> impl IntoView {
+    view! { <script nonce=use_nonce()>{DISPLAY_BOOTSTRAP}</script> }
+}
+
+/// The display bootstrap as it is rendered into the document head, without a
+/// Content Security Policy nonce, which the browser build does not carry.
+#[cfg(not(feature = "ssr"))]
+fn display_bootstrap() -> impl IntoView {
+    view! { <script>{DISPLAY_BOOTSTRAP}</script> }
+}
+
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
         <!DOCTYPE html>
@@ -38,7 +57,7 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                 <link rel="preconnect" href="https://fonts.googleapis.com"/>
                 <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=Nunito:wght@200..1000&display=swap" rel="stylesheet"/>
                 <AutoReload options=options.clone() />
-                <script nonce=use_nonce()>{DISPLAY_BOOTSTRAP}</script>
+                {display_bootstrap()}
                 <HydrationScripts options/>
                 <MetaTags/>
             </head>
@@ -462,8 +481,8 @@ fn FlipCard(title: &'static str, art: &'static str, full: &'static str) -> impl 
     view! {
         <div class="flip" on:click=move |_| {
             set_flipped.set(!flipped.get());
+            #[cfg(target_arch = "wasm32")]
             if let Some(el) = full_ref.get() {
-                #[cfg(target_arch = "wasm32")]
                 if let Ok(ev) = web_sys::Event::new("scroll") {
                     let _ = el.dispatch_event(&ev);
                 }
