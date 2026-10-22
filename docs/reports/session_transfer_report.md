@@ -1,6 +1,6 @@
 # Session Transfer Report — Exosystems.net
 
-> From session: ses_ea0d884a4ffec4a37Hao6LKiSp
+> From session: ses_e9f519c7fffen0Wl0KViirjhbv
 
 ## What Was Shipped
 
@@ -42,9 +42,17 @@ The DNS zone at Hostinger is complete and live. It carries the SPF record with `
 
 A message sent from `support@exosystems.net` on 2026-10-21 was delivered with all three checks passing: `dkim=pass` signed by `exosystems.net` through the `brevo2` selector, `spf=pass` on Brevo's sending host `77.32.148.25`, and `dmarc=pass` with the header domain aligned. The message identifier was `<202610211726.84771262764@smtp-relay.mailin.fr>`.
 
-The instance carries the mail stack and the domain's mailboxes. OpenCloudOS 9.6 holds Postfix 3.8.5, Dovecot 2.3.19.1, Roundcube 1.6.18 and PHP 8.3.31 available for installation, and the certificate renewal timer now checks every twelve hours with one hour of randomised delay and renews each certificate twenty-one days before expiry.
+The instance carries the mail stack and the domain's mailboxes. OpenCloudOS 9.6 holds Postfix 3.8.5, Dovecot 2.3.19.1, Roundcube 1.6.18 and PHP 8.3.31, and all four are installed and running. The certificate renewal timer checks every twelve hours with one hour of randomised delay and renews each certificate twenty-one days before expiry, and the `mail.exosystems.net` certificate joins that schedule.
+
+The stack receives the domain's mail. Postfix accepts `exosystems.net` on port 25, delivers to Maildir, and presents the `mail.exosystems.net` certificate over STARTTLS; outbound mail leaves through the Brevo relay, and the Postfix queue carries no relayed traffic. Dovecot serves IMAPS on port 993 against the same certificate, and nginx serves Roundcube at `https://mail.exosystems.net` with its state in a SQLite file of its own. The mailboxes are `support@exosystems.net`, `noreply@exosystems.net`, `dmarc@exosystems.net`, `postmaster@exosystems.net` and `abuse@exosystems.net`, each a system account with a Maildir under `/home/<local part>/Maildir` and a Roundcube user and identity, with the role addresses named in the instance's alias file so that each reaches the mailbox carrying the role.
+
+Both directions are verified from the public internet. A message submitted to the Brevo relay from the instance was delivered. A message submitted from outside the instance to `mail.exosystems.net` on port 25, over STARTTLS with the certificate the MX name carries, was accepted, delivered to the Maildir, and read back over IMAPS on port 993. The Lighthouse firewall carries the inbound rules for TCP 25 and TCP 993 from any IPv4 address, and the operating system's own firewall carries the same two ports.
+
+The record `docs/decisions/provision-the-authenticated-settings-profile.md` states what the instance must hold for the authenticated Settings page, section by section, and names the Brevo API key as the credential the instance still lacks.
 
 ## What's Next
+
+The next steps draw from the register of open decisions at `docs/decisions/pending.md`. A row moves from the register into this section when it is taken up, and the register records its closure; a row taken up here and closed leaves this section and the register together, with the closure in the record the register names.
 
 Owner onboarding first: the owner creates an identity on the main sign-in page, receives the first Admin delegation through the bootstrap path, and grants from the owner tools, which unlocks the gated models route for real use. Next the provider admission work: free-name filter plus live endpoint testing against the hosted database, then a full proving round with the registry and history counts refreshed into the README.
 
@@ -60,7 +68,17 @@ The UI pass continues alongside against the reference file: gadgetry stays real 
 
 Layout claims are settled by measurement rather than by reading the stylesheet. A headless browser renders the local build at device viewports in both orientations and reports computed grids, insets and margins; every breakpoint decision in the masthead was chosen from those readings, and the device spread from 360px through 1920px was measured against each candidate threshold before one was taken. Reading the stylesheet alone did not predict the rendered result: the container-query self-reference looked correct in the source and changed nothing on the page.
 
-The Exosystems mail system continues with the work named in the decision record: the Postfix, Dovecot and Roundcube installation on the instance with the inbound port 25 rule in the Lighthouse firewall; the `mail.exosystems.net` certificate and the nginx host that serves Roundcube; the sending path in the node with the Brevo webhook subscription, the suppression list and the opt-out history; the Rust aggregate-report parser with its authorized-source registry, its three report types and its eight additions to parsedmarc's model; and the mail-operations section of the Settings page. The instance hardening review follows the mail stack installation, with `docs/harden.md` updated for the new services.
+The Exosystems mail system continues with the work named in the decision record. The stack is installed and the receiving path is proven, so the remaining mail work is the sending path in the node with the Brevo webhook subscription, the suppression list and the opt-out history; the Rust aggregate-report parser with its authorized-source registry, its three report types and its eight additions to parsedmarc's model; and the mail-operations section of the Settings page, which gains the domain's mailbox list with its create and remove actions. The Brevo API key belongs in the instance's credential file beside the SMTP pair, so that the console's mail sections are served from the instance. The instance hardening review follows the mail stack installation, with `docs/harden.md` updated for the new services.
+
+## Pending
+
+The register of open decisions is `docs/decisions/pending.md`, where every row names what unblocks it and the record where its closure lands. The rows in flight are these.
+
+- **Row 9 — the Brevo API key in the instance's credential file.** Blocked on the credential handling decision. It lands as an addendum to `provision-the-authenticated-settings-profile.md`.
+- **Row 10 — the console's mail operations section, the domain's mailbox list with its create and remove actions.** Blocked on the instance's mail stack, which is in place, and on row 9. It lands as an addendum to `provision-the-authenticated-settings-profile.md`.
+- **Row 1 — the plain node on the instance.** Blocked on an instance access window and the helper identity's generation. It carries the send log, the suppression list, the opt-out history, the DMARC report record and the Brevo webhook endpoint, so the mail records and the webhook wait on it. It lands as an addendum to `run-full-conscia-node-on-exosystems-net.md`.
+
+The register's other rows stay there until they are taken up.
 
 ## Where Things Live
 
@@ -72,5 +90,7 @@ The Exosystems mail system continues with the work named in the decision record:
 - `/home/exocrat/code/exosystems_net/design-reference-index.html` — the visual reference the pages build toward.
 - `/home/exocrat/code/exosystems_net/docs/decisions/` — the decision log, including the settings-console record and the uncommitted hardening records.
 - `/home/exocrat/code/exosystems_net/docs/decisions/exosystems-email-services.md` — the Exosystems email services decision record: the Brevo relay and its credential, the inbound stack, the domain's DNS, the report and suppression records, and the Settings page surfaces.
+- `/home/exocrat/code/exosystems_net/docs/decisions/provision-the-authenticated-settings-profile.md` — what the instance must hold for the authenticated Settings page, section by section.
+- `/home/exocrat/code/exosystems_net/docs/decisions/pending.md` — the register of open decisions, with what unblocks each row and the record where its closure lands.
 - `/home/exocrat/code/exosystems_net/tools/model-rounds/` — model verification scripts (create_models_db.py, update_models_db.py, and related).
 - `/home/exocrat/code/exosystems_net/docs/harden.md` — hardening guide, git-ignored, local repo only, not deployed to exosystems.net or any remote.

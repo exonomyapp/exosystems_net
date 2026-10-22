@@ -33,7 +33,7 @@ The domain receives its own mail on the instance. The `exosystems.net` MX record
 |---|---|---|---|
 | Postfix | 3.8.5-5.oc9 | BaseOS | Accepts mail for the domain on port 25 and delivers it to Maildir |
 | Dovecot | 2.3.19.1-12.oc9 | EPOL | Serves IMAP over TLS on port 993 for reading the mail |
-| Roundcube | 1.6.18-1.oc9 | EPOL | Webmail at `mail.exosystems.net`, served by nginx over HTTPS |
+| Roundcube | roundcubemail 1.6.18-1.oc9 | EPOL | Webmail at `mail.exosystems.net`, served by nginx over HTTPS |
 | PHP | 8.3.31-3.oc9 | AppStream | Runtime for Roundcube |
 
 The instance runs OpenCloudOS 9.6. Roundcube holds its own state in its own SQLite file: user accounts, preferences, contact list, sessions, and the message index it uses for search. The mail itself stays in Maildir and is read over IMAP. Roundcube is configured against SQLite, MySQL or PostgreSQL by a single configuration setting, and it keeps its own database file.
@@ -41,6 +41,10 @@ The instance runs OpenCloudOS 9.6. Roundcube holds its own state in its own SQLi
 Inbound TCP port 25 is open in the Lighthouse firewall. The `mail.exosystems.net` certificate is issued by Let's Encrypt through the instance's existing certbot installation, whose renewal timer checks every twelve hours with one hour of randomised delay and renews each certificate twenty-one days before it expires. The certificates the instance already holds, for `exosystems.net`, `exocracy.org` and `models.exosystems.net`, share that schedule.
 
 The node reads the Maildir directly for message-triggered work such as the automatic reply. IMAP carries the mail for reading it in Roundcube and for access from other devices.
+
+The domain's mailboxes are `support@exosystems.net`, `noreply@exosystems.net`, `dmarc@exosystems.net`, `postmaster@exosystems.net` and `abuse@exosystems.net`. The last two are the role addresses a mail domain is conventionally found at, and they stand on the same footing as the three named earlier. Each is a system account on the instance with a Maildir under `/home/<local part>/Maildir`, and each holds a Roundcube user and identity. The `postmaster` and `abuse` names are held in the instance's alias file rather than the local account list, so that a message to either address reaches the mailbox that carries the role.
+
+Addendum 2026-10-22 — the stack named above is installed on the instance and running. Postfix accepts the domain on port 25 and delivers to Maildir, Dovecot serves IMAPS on port 993 against the `mail.exosystems.net` certificate, nginx serves Roundcube at `mail.exosystems.net` over HTTPS, and PHP-FPM is the runtime. The `mail.exosystems.net` certificate was issued by the instance's certbot installation and joins the schedule named above, renewing twenty-one days before expiry on the twelve-hourly timer. Roundcube holds its state in a SQLite file of its own at `/var/lib/roundcubemail/db.sqlite`, and it reaches the instance's own IMAP service through a loopback entry for `mail.exosystems.net`, because the instance cannot reach its own public address. A message submitted to the Brevo relay from the instance was delivered.
 
 ### Domain authentication
 
@@ -152,10 +156,11 @@ The mail stack adds two listening services to the instance, a mail transfer agen
 
 ## Not yet carried out
 
-The following are specified above and are not yet in place as of 2026-10-21:
+The following are specified above and are not yet in place as of 2026-10-22:
 
-- The Postfix, Dovecot and Roundcube installation on the instance, and the inbound TCP port 25 rule in the Lighthouse firewall.
-- The `mail.exosystems.net` certificate and the nginx virtual host that serves Roundcube.
+- The inbound TCP port 25 rule in the Lighthouse firewall. The mail stack itself is installed and running; the rule at the edge of the Tencent network is the part outstanding, and the same applies to the TCP port 993 rule that carries IMAP from outside.
 - The sending path in the node, the webhook subscription, the suppression list and the report record.
 - The Rust aggregate-report parser and the authorized source registry it maintains.
 - The suppression and opt-out section of the Settings page.
+
+The sending path in the node and the records it keeps wait on the Conscia node running on the instance, which is not yet deployed there. The Brevo account holds no webhook until that node serves an endpoint to subscribe.

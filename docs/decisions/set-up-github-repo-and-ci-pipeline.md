@@ -30,3 +30,7 @@ check stops the run so broken decisions never deploy. The live
 browser proofs (SR1–SR3, SR5 in `significant-requirements.md`) stay
 manual until the pipeline owns a browser runner; wiring that runner
 is a follow-on to row 2 of `pending.md`.
+
+## Addendum 2026-10-22 — the repository and the pipeline are live
+
+The repository is `exonomyapp/exosystems_net` and the workflow `.github/workflows/deploy.yml` runs on every push to `main`: the fitness checks, a release build of the server binary and the browser bundle, an artifact of the binary, the site folder and `allowed_dids.json`, and a deployment to the instance that restarts the service and verifies the response. The first green deployment ran on 2026-10-21, and the run of 2026-10-22 built commit `47eae3b` and restarted the service on the instance. The deployment ships the binary, the site folder and the allowlist file, so the nginx configuration held in the repository's `deploy/nginx/` folder stays reference material on the operator's machine and does not reach the host.

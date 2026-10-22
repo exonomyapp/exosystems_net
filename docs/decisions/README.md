@@ -10,6 +10,7 @@ between them are the way they are.
 |--------|--------|------|------|
 | No. | Record | Status | Date | Deps |
 |-----|--------|--------|------|------|
+| 39 | [Provision the authenticated settings profile on the instance](provision-the-authenticated-settings-profile.md) | Proposed | 2026-10-22 | R23, R33 |
 | 38 | [Self-host exosystems.net iroh relay for network isolation](self-host-iroh-relay.md) | Proposed | 2026-10-16 | R13 |
 | 37 | [Migrate the Alibaba Singapore instance off CentOS 7](migrate-alibaba-singapore-off-centos-7.md) | Proposed | 2026-10-09 |  |
 | 36 | [Deploy the ExoMetro node on the Alibaba Singapore instance](deploy-exometro-node-on-alibaba-singapore.md) | Proposed | 2026-10-09 |  |
