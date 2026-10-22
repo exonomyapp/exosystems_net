@@ -12,6 +12,7 @@ use crate::auth::{
     read_token, request_nonce, revoke_access, save_settings, set_flags, sign_out, stash_session,
     switch_session, update_profile, user_avatar, user_display_name, users_list, VisitorSettings,
 };
+use crate::mail::{create_mailbox, mailbox_list, remove_mailbox};
 use crate::store::{registry_rows, ModelRow};
 
 /// The visitor's stored display choices, applied by the browser to the root
@@ -1072,6 +1073,52 @@ fn SettingsPage() -> impl IntoView {
             set_flags(token, SiteFlags { disable_new_users: off }).await
         }
     });
+    let mailboxes = Resource::new(
+        || (),
+        |_| async move {
+            match read_token() {
+                Some(t) => mailbox_list(t).await.unwrap_or_default(),
+                None => vec![],
+            }
+        },
+    );
+    let (mail_local, set_mail_local) = signal(String::new());
+    let (mail_name, set_mail_name) = signal(String::new());
+    let (mail_msg, set_mail_msg) = signal(String::new());
+    let (mail_err, set_mail_err) = signal(false);
+    let create_mailbox_action = Action::new(|input: &(String, String, String)| {
+        let (token, local_part, display_name) = input.clone();
+        async move { create_mailbox(token, local_part, display_name).await }
+    });
+    let remove_mailbox_action = Action::new(|input: &(String, String)| {
+        let (token, local_part) = input.clone();
+        async move { remove_mailbox(token, local_part).await }
+    });
+    Effect::new_sync(move |_| {
+        if let Some(Ok(created)) = create_mailbox_action.value().get() {
+            set_mail_msg.set(format!(
+                "{} created. Password: {}. It is shown once.",
+                created.address, created.password
+            ));
+            set_mail_err.set(false);
+            set_mail_local.set(String::new());
+            set_mail_name.set(String::new());
+            mailboxes.refetch();
+        } else if let Some(Err(e)) = create_mailbox_action.value().get() {
+            set_mail_msg.set(format!("{e}"));
+            set_mail_err.set(true);
+        }
+    });
+    Effect::new_sync(move |_| {
+        if let Some(Ok(())) = remove_mailbox_action.value().get() {
+            set_mail_msg.set("Mailbox removed. The mail it received stays on the instance as the archive.".to_string());
+            set_mail_err.set(false);
+            mailboxes.refetch();
+        } else if let Some(Err(e)) = remove_mailbox_action.value().get() {
+            set_mail_msg.set(format!("{e}"));
+            set_mail_err.set(true);
+        }
+    });
     Effect::new_sync(move |_| {
         for r in [grant_action.value().get(), revoke_action.value().get(), profile_action.value().get(), remove_action.value().get(), flag_action.value().get()].into_iter().flatten() {
             match r {
@@ -1201,6 +1248,47 @@ fn SettingsPage() -> impl IntoView {
                                                 }
                                             }).collect::<Vec<_>>())}
                                         </div>
+                                    </div>
+                                })}
+                                {admin.then(|| view! {
+                                    <div class="family-card">
+                                        <h3>"Mailboxes"</h3>
+                                        <p>"The addresses on this domain that receive mail. Each one is an account on the instance, with its own mail store and its own webmail user."</p>
+                                        <div class="row-list">
+                                            {move || mailboxes.get().map(|list| list.into_iter().map(|m| {
+                                                let lp = m.local_part.clone();
+                                                let address = m.address.clone();
+                                                let name = m.display_name.clone();
+                                                view! {
+                                                    <div class="row">
+                                                        <span>{address}<small>{name}</small></span>
+                                                        <button class="secondary small" on:click=move |_| {
+                                                            if let Some(t) = read_token() { remove_mailbox_action.dispatch((t, lp.clone())); }
+                                                        }>"Remove"</button>
+                                                    </div>
+                                                }
+                                            }).collect::<Vec<_>>())}
+                                        </div>
+                                        <div class="field">
+                                            <label>"Address"</label>
+                                            <input placeholder="billing" on:input=move |ev| set_mail_local.set(event_target_value(&ev))/>
+                                        </div>
+                                        <div class="field">
+                                            <label>"Display name"</label>
+                                            <input placeholder="ExoBilling" on:input=move |ev| set_mail_name.set(event_target_value(&ev))/>
+                                        </div>
+                                        <div class="btn-row">
+                                            <button on:click=move |_| {
+                                                if let Some(t) = read_token() { create_mailbox_action.dispatch((t, mail_local.get(), mail_name.get())); }
+                                            }>"Add mailbox"</button>
+                                        </div>
+                                        {move || {
+                                            let m = mail_msg.get();
+                                            if m.is_empty() { view!{}.into_any() } else {
+                                                let cls = if mail_err.get() { "notice".to_string() } else { "notice ok".to_string() };
+                                                view!{ <p class=cls>{m}</p> }.into_any()
+                                            }
+                                        }}
                                     </div>
                                 })}
                             </section>

@@ -2,6 +2,7 @@
 
 pub mod app;
 pub mod auth;
+pub mod mail;
 pub mod store;
 
 #[cfg(feature = "hydrate")]

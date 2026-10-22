@@ -314,6 +314,46 @@ async fn level_of(did: &str) -> Option<exocore::protocol_internal::PermissionLev
     store.get(&updates_namespace())?.get(did).cloned()
 }
 
+/// Whether the identity named in OWNER_DID holds the owner tools while the
+/// delegation store is still empty. This is the bootstrap path: the first
+/// owner to sign in finds the store empty and holds the tools until the
+/// first delegation is written.
+#[cfg(feature = "ssr")]
+async fn bootstrap_owner(did: &str) -> bool {
+    if !is_owner_did(did) {
+        return false;
+    }
+    restore_delegations().await;
+    use exocore::network_internal::CAPABILITY_STORE;
+    let store = CAPABILITY_STORE.read().await;
+    store
+        .get(&updates_namespace())
+        .map(|m| m.is_empty())
+        .unwrap_or(true)
+}
+
+/// The operator tools and the console's privileged sections need the Admin
+/// delegation. The owner named in OWNER_DID holds them on the bootstrap
+/// path, while the delegation store is empty.
+#[cfg(feature = "ssr")]
+pub async fn require_admin(token: &str) -> Result<(), ServerFnError> {
+    let Some(did) = caller_did(token) else {
+        return Err(ServerFnError::ServerError("No session. Sign in first.".into()));
+    };
+    if matches!(
+        level_of(&did).await,
+        Some(exocore::protocol_internal::PermissionLevel::Admin)
+    ) {
+        return Ok(());
+    }
+    if bootstrap_owner(&did).await {
+        return Ok(());
+    }
+    Err(ServerFnError::ServerError(
+        "This section needs the Admin delegation.".into(),
+    ))
+}
+
 /// Gate check behind a token: who is it, and does a delegation cover models?
 #[server]
 pub async fn gate_check(token: String) -> Result<Option<GateView>, ServerFnError> {
@@ -326,7 +366,10 @@ pub async fn gate_check(token: String) -> Result<Option<GateView>, ServerFnError
             | Some(exocore::protocol_internal::PermissionLevel::Write)
             | Some(exocore::protocol_internal::PermissionLevel::Admin)
     );
-    let admin = matches!(level_of(&did).await, Some(exocore::protocol_internal::PermissionLevel::Admin));
+    let admin = matches!(
+        level_of(&did).await,
+        Some(exocore::protocol_internal::PermissionLevel::Admin)
+    ) || bootstrap_owner(&did).await;
     if !models {
         if let Ok(mut p) = PENDING.lock() {
             p.insert(did.clone());

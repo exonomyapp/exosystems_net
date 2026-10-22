@@ -981,6 +981,8 @@
         .row-list .row span { color: var(--text); word-break: break-all; min-width: 0; }
 
         .notice { color: #c04650; font-size: var(--fs-1); margin: var(--sp4) 0 0; }
+        .notice.ok { color: var(--accent); }
+        .row-list .row span small { display: block; color: var(--text-secondary); font-size: var(--fs-2); }
 
         /* ============================================================================
          * TABLES — the models registry

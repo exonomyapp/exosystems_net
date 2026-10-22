@@ -15,8 +15,8 @@ The register of open decisions is this file. The session transfer report at `doc
 | 6 | Decide which change wins when two devices edit the same content | Profile Bundle working (4), then a real two-device sync exercise | New record replacing the store record's "conflict merges out of scope" note |
 | 7 | Rewire boot and sign-in to the SQLite identity store and delete `allowed_dids.json` | Node store schema live (1); SR1 accounts re-conscired through the node's conscire endpoint | Addendum to `exosystems-exoauth.md` |
 | 8 | Retry the `sqlx` step to 0.9.0 | Locked `iroh` line dropping the `sha2` pre-release pin | Addendum to `choose-node-database-for-identity-and-willow-state.md` |
-| 9 | Place the Brevo API key in the instance's credential file beside the SMTP pair | Credential handling decision | Addendum to `provision-the-authenticated-settings-profile.md` |
-| 10 | Build the console's mail operations section: the domain's mailbox list with its create and remove actions | The instance's mail stack (done); the API key (9) | Addendum to `provision-the-authenticated-settings-profile.md` |
+| 9 | Place the Brevo API key in the instance's credential file beside the SMTP pair — closed 2026-10-22 | The key is in `/opt/exosystems_net/env`; the addendum is in `provision-the-authenticated-settings-profile.md` | `provision-the-authenticated-settings-profile.md` addendum |
+| 10 | Build the console's mail operations section: the domain's mailbox list with its create and remove actions — closed 2026-10-22 | The section is built; the record is `manage-mailboxes-from-the-settings-console.md` | `manage-mailboxes-from-the-settings-console.md` |
 
 Rule: nothing leaves this list silently — each row closes with a
 dated addendum or a superseding record, never a quiet edit.

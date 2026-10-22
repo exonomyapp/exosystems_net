@@ -50,6 +50,8 @@ Both directions are verified from the public internet. A message submitted to th
 
 The record `docs/decisions/provision-the-authenticated-settings-profile.md` states what the instance must hold for the authenticated Settings page, section by section, and names the Brevo API key as the credential the instance still lacks.
 
+The Brevo API key now stands in the instance's credential file beside the SMTP pair, and the console carries a Mailboxes section: it lists the domain's mailboxes with their addresses and the names that appear on the mail they send, creates a mailbox with its account, password, mail store, alias and webmail user, and withdraws one, which leaves the mail store on the instance as the archive of what the address received. Its record is `docs/decisions/manage-mailboxes-from-the-settings-console.md`. The gate the console reads now recognises the bootstrap owner, so an identity named in `OWNER_DID` holds the operator surfaces while the delegation store is empty and reaches them on the first sign-in.
+
 ## What's Next
 
 The next steps draw from the register of open decisions at `docs/decisions/pending.md`. A row moves from the register into this section when it is taken up, and the register records its closure; a row taken up here and closed leaves this section and the register together, with the closure in the record the register names.
@@ -74,9 +76,9 @@ The Exosystems mail system continues with the work named in the decision record.
 
 The register of open decisions is `docs/decisions/pending.md`, where every row names what unblocks it and the record where its closure lands. The rows in flight are these.
 
-- **Row 9 — the Brevo API key in the instance's credential file.** Blocked on the credential handling decision. It lands as an addendum to `provision-the-authenticated-settings-profile.md`.
-- **Row 10 — the console's mail operations section, the domain's mailbox list with its create and remove actions.** Blocked on the instance's mail stack, which is in place, and on row 9. It lands as an addendum to `provision-the-authenticated-settings-profile.md`.
 - **Row 1 — the plain node on the instance.** Blocked on an instance access window and the helper identity's generation. It carries the send log, the suppression list, the opt-out history, the DMARC report record and the Brevo webhook endpoint, so the mail records and the webhook wait on it. It lands as an addendum to `run-full-conscia-node-on-exosystems-net.md`.
+
+Rows 9 and 10 have closed: the Brevo API key stands in the instance's credential file, and the console's mailbox section is built.
 
 The register's other rows stay there until they are taken up.
 

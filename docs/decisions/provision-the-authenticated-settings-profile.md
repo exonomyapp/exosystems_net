@@ -61,3 +61,9 @@ The sections that read the node's store stay unavailable until the node is deplo
 - The node's deployment on the instance, which carries the send log, the suppression list, the opt-out history, the DMARC report record, the authorized-source registry, the published-policy history, the webhook endpoint, the sessions, the sync state and the operator tools.
 - The application reading the approved identity list from the node's identity store, retiring the seeded allowlist per pending row 7.
 - The console's mail operations section: the mailbox list with its create and remove actions.
+
+## Addendum 2026-10-22 — the Brevo API key and the mailbox section
+
+The Brevo API key stands in the instance's credential file beside the SMTP login and key, and the file keeps owner-only permissions. The console's mail-operations section is built: the Settings page carries a Mailboxes section that lists the domain's mailboxes with their addresses and sending names, creates a mailbox with its account, password, mail store, alias and webmail user, and withdraws one, which leaves the mail store on the instance as the archive. Its record is `manage-mailboxes-from-the-settings-console.md`.
+
+The gate the console reads now recognises the bootstrap owner: an identity named in `OWNER_DID` holds the operator surfaces while the delegation store is empty, so the owner reaches them on the first sign-in.
