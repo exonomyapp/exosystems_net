@@ -10,6 +10,7 @@ between them are the way they are.
 |--------|--------|------|------|
 | No. | Record | Status | Date | Deps |
 |-----|--------|--------|------|------|
+| 41 | [Ship the nginx configuration with the deployment](ship-the-nginx-configuration-with-the-deployment.md) | Proposed | 2026-10-22 | R31, R3 |
 | 40 | [Manage the domain's mailboxes from the Settings console](manage-mailboxes-from-the-settings-console.md) | Proposed | 2026-10-22 | R23, R39 |
 | 39 | [Provision the authenticated settings profile on the instance](provision-the-authenticated-settings-profile.md) | Proposed | 2026-10-22 | R23, R33 |
 | 38 | [Self-host exosystems.net iroh relay for network isolation](self-host-iroh-relay.md) | Proposed | 2026-10-16 | R13 |

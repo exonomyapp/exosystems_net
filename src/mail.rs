@@ -308,10 +308,23 @@ fn write_password_file(entries: &[(String, String)]) -> Result<(), ServerFnError
     Ok(())
 }
 
+/// The machine that holds the mail server. A build running on another
+/// machine has no mail server to manage, and the account tools would act on
+/// the wrong machine.
+#[cfg(feature = "ssr")]
+fn mail_server_present() -> bool {
+    std::path::Path::new(ROUNDCUBE_DB).is_file()
+}
+
 /// The mailboxes the domain holds.
 #[server]
 pub async fn mailbox_list(token: String) -> Result<Vec<Mailbox>, ServerFnError> {
     crate::auth::require_admin(&token).await?;
+    if !mail_server_present() {
+        return Err(fail(
+            "This build is not running on the instance that holds the mail server.",
+        ));
+    }
     list_mailboxes()
 }
 
@@ -325,6 +338,11 @@ pub async fn create_mailbox(
     display_name: String,
 ) -> Result<CreatedMailbox, ServerFnError> {
     crate::auth::require_admin(&token).await?;
+    if !mail_server_present() {
+        return Err(fail(
+            "This build is not running on the instance that holds the mail server.",
+        ));
+    }
 
     let local_part = local_part.trim().to_lowercase();
     if !local_part_ok(&local_part) {
@@ -398,6 +416,11 @@ pub async fn create_mailbox(
 #[server]
 pub async fn remove_mailbox(token: String, local_part: String) -> Result<(), ServerFnError> {
     crate::auth::require_admin(&token).await?;
+    if !mail_server_present() {
+        return Err(fail(
+            "This build is not running on the instance that holds the mail server.",
+        ));
+    }
 
     let local_part = local_part.trim().to_lowercase();
     if !local_part_ok(&local_part) {

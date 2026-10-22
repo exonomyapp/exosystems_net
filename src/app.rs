@@ -627,7 +627,12 @@ fn SigninPage() -> impl IntoView {
         }
         if let Some(Ok(fresh)) = create_action.value().get() {
             stash_session(&fresh.did, &fresh.token);
-            set_notice.set(format!("New identity {} signed in. The owner grants powers on the settings page.", fresh.did));
+            set_notice.set(format!(
+                "New identity {} signed in. Its secret is {}. It is shown once, and it is the key to this identity. The owner grants powers on the settings page.",
+                fresh.did, fresh.secret
+            ));
+        } else if let Some(Err(e)) = create_action.value().get() {
+            set_notice.set(format!("The identity was not created: {e}"));
         }
     });
 

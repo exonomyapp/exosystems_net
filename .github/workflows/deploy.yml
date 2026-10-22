@@ -97,3 +97,24 @@ jobs:
             sleep 5
             curl -sf http://127.0.0.1:3000/ | head -c 200
             echo "DEPLOY-OK"
+            # The front door comes from the repository. Each configuration
+            # file is copied into place, tested, and only then loaded; a file
+            # that fails the test is put back the way it was.
+            for NAME in exosystems.conf models.conf; do
+              SRC=/opt/exosystems_net/incoming/deploy/nginx/$NAME
+              DST=/etc/nginx/conf.d/$NAME
+              if [ -f "$DST" ]; then cp -a "$DST" "$DST.bak.$(date +%Y%m%d%H%M%S)"; fi
+              install -m 644 "$SRC" "$DST"
+            done
+            if ! nginx -t; then
+              for NAME in exosystems.conf models.conf; do
+                DST=/etc/nginx/conf.d/$NAME
+                BAK=$(ls -t "$DST".bak.* 2>/dev/null | head -1)
+                if [ -n "$BAK" ]; then cp -a "$BAK" "$DST"; fi
+              done
+              nginx -t
+              echo "NGINX-CONFIG-REJECTED"
+              exit 1
+            fi
+            systemctl reload nginx
+            echo "NGINX-OK"
