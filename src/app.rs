@@ -7,10 +7,12 @@ use leptos_router::{
 };
 
 use crate::auth::{
-    active_did, answer_nonce, clear_token, create_identity, delete_identity, docs_content,
-    drop_session, gate_check, get_flags, grant_access, live_sessions, pending_list, read_settings,
-    read_token, request_nonce, revoke_access, save_settings, set_flags, sign_out, stash_session,
-    switch_session, update_profile, user_avatar, user_display_name, users_list, VisitorSettings,
+    active_did, answer_nonce, approve_petition, clear_token, create_identity, delete_identity,
+    docs_content, drop_session, gate_check, get_flags, grant_access, live_sessions, list_petitions,
+    pending_list, petition_access, read_saved_secret, read_settings, read_token, request_nonce,
+    refuse_petition, revoke_access, save_settings, set_flags, sign_out, stash_session,
+    store_saved_secret, switch_session, update_profile, user_avatar, user_display_name,
+    users_list, VisitorSettings,
 };
 use crate::mail::{create_mailbox, mailbox_list, remove_mailbox};
 use crate::store::{registry_rows, ModelRow};
@@ -589,8 +591,11 @@ fn SigninPage() -> impl IntoView {
     let (did_input, set_did_input) = signal(String::new());
     let (secret_input, set_secret_input) = signal(String::new());
     let (name_input, set_name_input) = signal(String::new());
+    let (save_secret, set_save_secret) = signal(false);
     let (notice, set_notice) = signal(String::new());
     let (answered, set_answered) = signal(String::new());
+    let (petition_did, set_petition_did) = signal(String::new());
+    let (petition_open, set_petition_open) = signal(false);
     let navigate = use_navigate();
     let nonce_action = Action::new(|did: &String| {
         let did = did.clone();
@@ -600,8 +605,24 @@ fn SigninPage() -> impl IntoView {
         let (name, avatar) = input.clone();
         async move { create_identity(name, avatar).await }
     });
+    let petition_action = Action::new(move |did: &String| {
+        let did = did.clone();
+        let set_petition_open = set_petition_open;
+        let set_petition_did = set_petition_did;
+        let set_notice = set_notice;
+        async move {
+            match petition_access(did.clone(), String::new()).await {
+                Ok(()) => {
+                    set_petition_open.set(false);
+                    set_petition_did.set(String::new());
+                }
+                Err(e) => set_notice.set(format!("Petition not sent: {e}")),
+            }
+        }
+    });
 
     Effect::new_sync(move |_| {
+        let nav = navigate.clone();
         if let Some(Ok(nonce)) = nonce_action.value().get() {
             if answered.get() == nonce {
                 return;
@@ -609,14 +630,22 @@ fn SigninPage() -> impl IntoView {
             set_answered.set(nonce.clone());
             let did = did_input.get();
             let nonce_send = nonce.clone();
-            let nav = navigate.clone();
+            let should_save = save_secret.get();
             match sign_challenge(&secret_input.get(), &nonce) {
                 Ok(sig) => {
                     leptos::task::spawn_local(async move {
                         match answer_nonce(did.clone(), nonce_send, sig).await {
-                            Ok(token) => {
-                                stash_session(&did, &token);
-                                nav("/", Default::default());
+                            Ok(result) => {
+                                stash_session(&did, &result.token);
+                                if should_save {
+                                    store_saved_secret(&did, &secret_input.get());
+                                }
+                                if result.needs_approval {
+                                    set_petition_did.set(did);
+                                    set_petition_open.set(true);
+                                } else {
+                                    nav("/", Default::default());
+                                }
                             }
                             Err(e) => set_notice.set(format!("Not signed in: {e}")),
                         }
@@ -627,6 +656,9 @@ fn SigninPage() -> impl IntoView {
         }
         if let Some(Ok(fresh)) = create_action.value().get() {
             stash_session(&fresh.did, &fresh.token);
+            if save_secret.get() {
+                store_saved_secret(&fresh.did, &fresh.secret);
+            }
             set_notice.set(format!(
                 "New identity {} signed in. Its secret is {}. It is shown once, and it is the key to this identity. The owner grants powers on the settings page.",
                 fresh.did, fresh.secret
@@ -645,15 +677,24 @@ fn SigninPage() -> impl IntoView {
                     <p>"Identities the local Willow store knows. Pick one, prove its secret, and continue."</p>
                     <div class="id-list">
                         {move || users.get().map(|list| list.into_iter().map(|u| {
-                            let did = u.did.clone();
-                            let name = u.display_name.clone();
-                            let initial = name.chars().next().unwrap_or('?').to_uppercase().to_string();
-                            view! {
-                                <button on:click=move |_| { set_notice.set(String::new()); set_did_input.set(did.clone()); nonce_action.dispatch(did.clone()); }>
-                                    <span class="avatar-fallback">{initial.clone()}</span>
-                                    <span>{name.clone()}</span>
-                                </button>
-                            }
+                                let did = u.did.clone();
+                                let name = u.display_name.clone();
+                                let initial = name.chars().next().unwrap_or('?').to_uppercase().to_string();
+                                let saved = read_saved_secret(&did);
+                                view! {
+                                    <button on:click=move |_| {
+                                        set_notice.set(String::new());
+                                        set_did_input.set(did.clone());
+                                        if let Some(saved_secret) = &saved {
+                                            set_secret_input.set(saved_secret.clone());
+                                            set_save_secret.set(true);
+                                        }
+                                        nonce_action.dispatch(did.clone());
+                                    }>
+                                        <span class="avatar-fallback">{initial.clone()}</span>
+                                        <span>{name.clone()}</span>
+                                    </button>
+                                }
                         }).collect::<Vec<_>>())}
                     </div>
                     <div class="field">
@@ -663,6 +704,17 @@ fn SigninPage() -> impl IntoView {
                     <div class="field">
                         <label>"Secret"</label>
                         <input type="password" placeholder="secret" on:input=move |ev| set_secret_input.set(event_target_value(&ev))/>
+                    </div>
+                    <div class="field">
+                        <label>
+                            <input
+                                type="checkbox"
+                                prop:checked=save_secret
+                                on:change=move |_| set_save_secret.update(|v| *v = !*v)
+                            />
+                            "Save this secret on this device"
+                        </label>
+                        <p class="notice">"Saved in browser storage. Anyone with access to this device can use it."</p>
                     </div>
                     <div class="btn-row">
                         <button on:click=move |_| {
@@ -688,10 +740,49 @@ fn SigninPage() -> impl IntoView {
                                     create_action.dispatch((name_input.get(), String::new()));
                                 }>"Generate identity"</button>
                             </div>
+                            <div class="field">
+                                <label>
+                                    <input
+                                        type="checkbox"
+                                        prop:checked=save_secret
+                                        on:change=move |_| set_save_secret.update(|v| *v = !*v)
+                                    />
+                                    "Save this secret on this device"
+                                </label>
+                                <p class="notice">"Saved in browser storage. Anyone with access to this device can use it."</p>
+                            </div>
                         }.into_any()
                     })}
                 </div>
             </section>
+            {move || {
+                if petition_open.get() {
+                    let did = petition_did.get();
+                    view! {
+                        <div class="petition-modal">
+                            <h3>"Petition this node for access"</h3>
+                            <p>
+                                "Your identity "
+                                <strong>{did.clone()}</strong>
+                                " proved its secret, but this Conscia node does not know you yet. "
+                                "Access requires approval from the node owner. "
+                                "Petition now and the owner can approve or refuse your request."
+                            </p>
+                            <div class="btn-row">
+                                <button on:click=move |_| {
+                                    petition_action.dispatch(did.clone());
+                                }>"Send petition"</button>
+                                <button on:click=move |_| {
+                                    set_petition_open.set(false);
+                                    set_petition_did.set(String::new());
+                                }>"Cancel"</button>
+                            </div>
+                        </div>
+                    }.into_any()
+                } else {
+                    view!{}.into_any()
+                }
+            }}
         </SectionPage>
     }
 }
@@ -1052,6 +1143,15 @@ fn SettingsPage() -> impl IntoView {
             }
         },
     );
+    let petitions = Resource::new(
+        || (),
+        |_| async move {
+            match read_token() {
+                Some(t) => list_petitions(t).await.unwrap_or_default(),
+                None => vec![],
+            }
+        },
+    );
     let flags = Resource::new(|| (), |_| async move { get_flags().await.unwrap_or_default() });
     let (grant_did, set_grant_did) = signal(String::new());
     let (grant_level, set_grant_level) = signal("read".to_string());
@@ -1062,6 +1162,14 @@ fn SettingsPage() -> impl IntoView {
     let revoke_action = Action::new(|input: &(String, String)| {
         let (token, did) = input.clone();
         async move { revoke_access(token, did).await }
+    });
+    let approve_action = Action::new(|input: &(String, String)| {
+        let (token, did) = input.clone();
+        async move { approve_petition(token, did).await }
+    });
+    let refuse_action = Action::new(|input: &(String, String)| {
+        let (token, did) = input.clone();
+        async move { refuse_petition(token, did).await }
     });
     let profile_action = Action::new(|input: &(String, String, String)| {
         let (token, name, avatar) = input.clone();
@@ -1125,11 +1233,12 @@ fn SettingsPage() -> impl IntoView {
         }
     });
     Effect::new_sync(move |_| {
-        for r in [grant_action.value().get(), revoke_action.value().get(), profile_action.value().get(), remove_action.value().get(), flag_action.value().get()].into_iter().flatten() {
+        for r in [grant_action.value().get(), revoke_action.value().get(), approve_action.value().get(), refuse_action.value().get(), profile_action.value().get(), remove_action.value().get(), flag_action.value().get()].into_iter().flatten() {
             match r {
                 Ok(()) => {
                     set_note.set("Saved.".to_string());
                     pending.refetch();
+                    petitions.refetch();
                     flags.refetch();
                     gate.refetch();
                 }
@@ -1249,6 +1358,31 @@ fn SettingsPage() -> impl IntoView {
                                                         <button class="secondary small" on:click=move |_| {
                                                             if let Some(t) = read_token() { revoke_action.dispatch((t, d.clone())); }
                                                         }>"Revoke"</button>
+                                                    </div>
+                                                }
+                                            }).collect::<Vec<_>>())}
+                                        </div>
+                                    </div>
+                                })}
+                                {admin.then(|| view! {
+                                    <div class="family-card">
+                                        <h3>"Pending petitions"</h3>
+                                        <p>"Identities that proved their secret but need your approval before they can sign in."</p>
+                                        <div class="row-list">
+                                            {move || petitions.get().map(|list| list.into_iter().map(|p| {
+                                                let d = p.did.clone();
+                                                let name = p.display_name.clone().unwrap_or_default();
+                                                let d_approve = d.clone();
+                                                let d_refuse = d.clone();
+                                                view! {
+                                                    <div class="row">
+                                                        <span>{format!("{} ({})", d, if name.is_empty() { "no name" } else { &name })}</span>
+                                                        <button class="secondary small" on:click=move |_| {
+                                                            if let Some(t) = read_token() { approve_action.dispatch((t, d_approve.clone())); }
+                                                        }>"Approve"</button>
+                                                        <button class="secondary small" on:click=move |_| {
+                                                            if let Some(t) = read_token() { refuse_action.dispatch((t, d_refuse.clone())); }
+                                                        }>"Refuse"</button>
                                                     </div>
                                                 }
                                             }).collect::<Vec<_>>())}

@@ -13,6 +13,7 @@ between them are the way they are.
 | 41 | [Ship the nginx configuration with the deployment](ship-the-nginx-configuration-with-the-deployment.md) | Proposed | 2026-10-22 | R31, R3 |
 | 40 | [Manage the domain's mailboxes from the Settings console](manage-mailboxes-from-the-settings-console.md) | Proposed | 2026-10-22 | R23, R39 |
 | 39 | [Provision the authenticated settings profile on the instance](provision-the-authenticated-settings-profile.md) | Proposed | 2026-10-22 | R23, R33 |
+| 42 | [Petition email templates for conscire approval flows](petition-email-templates.md) | Proposed | 2026-10-22 |  |
 | 38 | [Self-host exosystems.net iroh relay for network isolation](self-host-iroh-relay.md) | Proposed | 2026-10-16 | R13 |
 | 37 | [Migrate the Alibaba Singapore instance off CentOS 7](migrate-alibaba-singapore-off-centos-7.md) | Proposed | 2026-10-09 |  |
 | 36 | [Deploy the ExoMetro node on the Alibaba Singapore instance](deploy-exometro-node-on-alibaba-singapore.md) | Proposed | 2026-10-09 |  |

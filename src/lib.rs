@@ -5,6 +5,9 @@ pub mod auth;
 pub mod mail;
 pub mod store;
 
+#[cfg(feature = "ssr")]
+pub mod identity_store;
+
 #[cfg(feature = "hydrate")]
 #[wasm_bindgen::prelude::wasm_bindgen]
 pub fn hydrate() {

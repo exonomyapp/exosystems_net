@@ -16,6 +16,9 @@ use std::sync::{LazyLock, Mutex};
 #[cfg(not(target_arch = "wasm32"))]
 use std::time::{SystemTime, UNIX_EPOCH};
 
+#[cfg(feature = "ssr")]
+use crate::identity_store;
+
 #[cfg(not(target_arch = "wasm32"))]
 static SESSIONS: LazyLock<Mutex<HashMap<String, String>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
@@ -28,14 +31,18 @@ static CHALLENGES: LazyLock<Mutex<HashMap<String, (String, u64)>>> =
 static PENDING: LazyLock<Mutex<HashSet<String>>> = LazyLock::new(|| Mutex::new(HashSet::new()));
 
 #[cfg(not(target_arch = "wasm32"))]
-static APPROVED: LazyLock<Mutex<HashSet<String>>> = LazyLock::new(|| Mutex::new(HashSet::new()));
+static STORE: LazyLock<Mutex<Option<sqlx::SqlitePool>>> =
+    LazyLock::new(|| Mutex::new(None));
 
-/// Called once at server boot with the owner-edited approved list.
+/// Called once at server boot. Opens the SQLite identity store and runs
+/// migrations. Replaces the allowed_dids.json seed.
 #[cfg(feature = "ssr")]
-pub fn seed_approved(dids: Vec<String>) {
-    if let Ok(mut approved) = APPROVED.lock() {
-        approved.extend(dids);
+pub async fn init_store() -> Result<(), sqlx::Error> {
+    let pool = identity_store::open().await?;
+    if let Ok(mut store) = STORE.lock() {
+        *store = Some(pool);
     }
+    Ok(())
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -44,6 +51,12 @@ const NONCE_MINUTES: u64 = 5;
 #[cfg(not(target_arch = "wasm32"))]
 fn now_epoch() -> u64 {
     SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0)
+}
+
+/// Get the SQLite identity store pool, if opened at boot.
+#[cfg(feature = "ssr")]
+fn store_pool() -> Option<sqlx::SqlitePool> {
+    STORE.lock().ok().and_then(|s| s.clone())
 }
 
 /// Format check: did:peer:2.Vz plus base58 32-byte key.
@@ -88,6 +101,19 @@ pub struct NewIdentity {
     pub token: String,
 }
 
+/// One row from the petitions table. Serialize/Deserialize are always
+/// derived so the type crosses the #[server] boundary; sqlx::FromRow is
+/// only derived with the ssr feature.
+#[cfg_attr(feature = "ssr", derive(sqlx::FromRow))]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PetitionRow {
+    pub id: String,
+    pub did: String,
+    pub display_name: Option<String>,
+    pub created_at: String,
+    pub status: String,
+}
+
 /// What the gate sees behind a token.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GateView {
@@ -116,21 +142,37 @@ pub async fn request_nonce(did: String) -> Result<String, ServerFnError> {
     if !did_format_ok(&did) {
         return Err(ServerFnError::ServerError("That is not a did:peer identity. It looks like did:peer:2.Vz…".into()));
     }
+    let pool = match store_pool() {
+        Some(p) => p,
+        None => return Err(ServerFnError::ServerError("identity store not ready".into())),
+    };
+    let known = identity_store::get_identity(&pool, &did).await.map(|r| r.is_some()).unwrap_or(false);
     let nonce = new_nonce();
     let expiry = now_epoch() + NONCE_MINUTES * 60;
     match CHALLENGES.lock() {
         Ok(mut c) => {
-            c.insert(did, (nonce.clone(), expiry));
+            c.insert(did.clone(), (nonce.clone(), expiry));
         }
         Err(_) => return Err(ServerFnError::ServerError("challenge store locked".into())),
     }
-    Ok(nonce)
+    if known {
+        Ok(nonce)
+    } else {
+        Ok(nonce)
+    }
+}
+
+/// Result of a challenge-response sign-in round.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SignInResult {
+    pub token: String,
+    pub needs_approval: bool,
 }
 
 /// Answer the challenge with the identity secret's signature over the nonce.
 /// The secret itself never crosses the wire.
 #[server]
-pub async fn answer_nonce(did: String, nonce: String, signature_b58: String) -> Result<String, ServerFnError> {
+pub async fn answer_nonce(did: String, nonce: String, signature_b58: String) -> Result<SignInResult, ServerFnError> {
     let did = did.trim().to_string();
     let expected = match CHALLENGES.lock().map(|mut c| c.remove(&did)) {
         Ok(v) => v,
@@ -178,8 +220,21 @@ pub async fn answer_nonce(did: String, nonce: String, signature_b58: String) -> 
         }
         Err(_) => return Err(ServerFnError::ServerError("sessions locked".into())),
     }
-    ensure_profile(&did);
-    Ok(token)
+    let pool = match store_pool() {
+        Some(p) => p,
+        None => return Err(ServerFnError::ServerError("identity store not ready".into())),
+    };
+    let known = identity_store::get_identity(&pool, &did).await.map(|r| r.is_some()).unwrap_or(false);
+    if !known {
+        // Unknown identity that proved secret ownership: requires conscire
+        // approval from the node owner before sign-in is complete.
+        match PENDING.lock() {
+            Ok(mut p) => { p.insert(did.clone()); }
+            Err(_) => return Err(ServerFnError::ServerError("pending store locked".into())),
+        }
+        return Ok(SignInResult { token, needs_approval: true });
+    }
+    Ok(SignInResult { token, needs_approval: false })
 }
 
 /// Generate a peer identity on the spot and continue signed in with it.
@@ -198,9 +253,9 @@ pub async fn create_identity(display_name: String, avatar: String) -> Result<New
     if avatar.len() > 262144 {
         return Err(ServerFnError::ServerError("That avatar image is too large.".into()));
     }
-    if users_empty() && site_flags().disable_new_users {
+    if users_empty().await && site_flags().await.disable_new_users {
         // First identity bootstraps the mesh even while creation is paused.
-    } else if site_flags().disable_new_users && !users_empty() {
+    } else if site_flags().await.disable_new_users && !users_empty().await {
         return Err(ServerFnError::ServerError("Adding identities is paused by the owner.".into()));
     }
 
@@ -216,10 +271,20 @@ pub async fn create_identity(display_name: String, avatar: String) -> Result<New
         }
         Err(_) => return Err(ServerFnError::ServerError("sessions locked".into())),
     }
-    if let Ok(mut p) = PENDING.lock() {
-        p.insert(did.clone());
+    let pool = match store_pool() {
+        Some(p) => p,
+        None => return Err(ServerFnError::ServerError("identity store not ready".into())),
+    };
+    if let Err(e) = identity_store::insert_identity(
+        &pool,
+        &did,
+        "person",
+        None,
+        Some(&display_name),
+        if avatar.is_empty() { None } else { Some(&avatar) },
+    ).await {
+        return Err(ServerFnError::ServerError(format!("could not store identity: {e}")));
     }
-    upsert_profile(&did, display_name, avatar);
     Ok(NewIdentity { did, secret, token })
 }
 
@@ -271,36 +336,58 @@ pub fn clear_token() {
 #[cfg(not(target_arch = "wasm32"))]
 pub fn clear_token() {}
 
+#[cfg(target_arch = "wasm32")]
+const SAVED_SECRET_KEY: &str = "exo_saved_secret";
+
+/// Store a saved secret for an identity on this device.
+/// Stored in browser localStorage at the user's explicit choice.
+#[cfg(target_arch = "wasm32")]
+pub fn store_saved_secret(did: &str, secret: &str) {
+    let key = format!("{SAVED_SECRET_KEY}:{did}");
+    let _ = web_sys::window()
+        .and_then(|w| w.local_storage().ok())
+        .flatten()
+        .map(|s| s.set_item(&key, secret));
+}
+
+/// Read a saved secret for an identity from this device.
+/// Returns None when none was saved.
+#[cfg(target_arch = "wasm32")]
+pub fn read_saved_secret(did: &str) -> Option<String> {
+    let key = format!("{SAVED_SECRET_KEY}:{did}");
+    web_sys::window()?
+        .local_storage()
+        .ok()?
+        .unwrap()
+        .get_item(&key)
+        .ok()?
+}
+
+/// Clear a saved secret for an identity from this device.
+#[cfg(target_arch = "wasm32")]
+pub fn clear_saved_secret(did: &str) {
+    let key = format!("{SAVED_SECRET_KEY}:{did}");
+    let _ = web_sys::window()
+        .and_then(|w| w.local_storage().ok())
+        .flatten()
+        .map(|s| s.remove_item(&key));
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub fn store_saved_secret(_did: &str, _secret: &str) {}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub fn read_saved_secret(_did: &str) -> Option<String> {
+    None
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub fn clear_saved_secret(_did: &str) {}
+
 /// Everything below runs server-side against the capability store.
-/// Delegations live in the in-process capability store managed by the
-/// Willow networking code linked into this server binary. The store
-/// persists through its own file below, which the node code reads back.
-#[cfg(feature = "ssr")]
-fn capabilities_path() -> std::path::PathBuf {
-    std::path::Path::new("exostorage").join("capabilities.json")
-}
-
-#[cfg(feature = "ssr")]
-async fn persist_delegations() {
-    use exocore::network_internal::CAPABILITY_STORE;
-    let store = CAPABILITY_STORE.read().await;
-    let _ = std::fs::create_dir_all("exostorage");
-    if let Ok(json) = serde_json::to_string(&*store) {
-        let _ = std::fs::write(capabilities_path(), json);
-    }
-}
-
-#[cfg(feature = "ssr")]
-async fn restore_delegations() {
-    use exocore::network_internal::CAPABILITY_STORE;
-    if let Ok(json) = std::fs::read_to_string(capabilities_path()) {
-        if let Ok(data) = serde_json::from_str(&json) {
-            let mut store = CAPABILITY_STORE.write().await;
-            *store = data;
-        }
-    }
-}
-
+/// The operator tools and the console's privileged sections need the Admin
+/// delegation. The owner named in OWNER_DID holds them on the bootstrap
+/// path, while the delegation store is empty.
 #[cfg(feature = "ssr")]
 fn caller_did(token: &str) -> Option<String> {
     SESSIONS.lock().ok()?.get(token).cloned()
@@ -308,28 +395,35 @@ fn caller_did(token: &str) -> Option<String> {
 
 #[cfg(feature = "ssr")]
 async fn level_of(did: &str) -> Option<exocore::protocol_internal::PermissionLevel> {
-    use exocore::network_internal::CAPABILITY_STORE;
-    restore_delegations().await;
-    let store = CAPABILITY_STORE.read().await;
-    store.get(&updates_namespace())?.get(did).cloned()
+    let pool = store_pool()?;
+    let ns_hex = bs58::encode(updates_namespace()).into_string();
+    match identity_store::get_delegation(&pool, &ns_hex, did).await.ok().flatten() {
+        Some(d) => match d.permission.as_str() {
+            "read" => Some(exocore::protocol_internal::PermissionLevel::Read),
+            "write" => Some(exocore::protocol_internal::PermissionLevel::Write),
+            "admin" => Some(exocore::protocol_internal::PermissionLevel::Admin),
+            _ => None,
+        },
+        None => {
+            if bootstrap_owner(&did).await {
+                Some(exocore::protocol_internal::PermissionLevel::Admin)
+            } else {
+                None
+            }
+        }
+    }
 }
 
-/// Whether the identity named in OWNER_DID holds the owner tools while the
-/// delegation store is still empty. This is the bootstrap path: the first
-/// owner to sign in finds the store empty and holds the tools until the
-/// first delegation is written.
 #[cfg(feature = "ssr")]
 async fn bootstrap_owner(did: &str) -> bool {
     if !is_owner_did(did) {
         return false;
     }
-    restore_delegations().await;
-    use exocore::network_internal::CAPABILITY_STORE;
-    let store = CAPABILITY_STORE.read().await;
-    store
-        .get(&updates_namespace())
-        .map(|m| m.is_empty())
-        .unwrap_or(true)
+    let pool = match store_pool() {
+        Some(p) => p,
+        None => return true,
+    };
+    identity_store::delegations_empty(&pool).await.unwrap_or(true)
 }
 
 /// The operator tools and the console's privileged sections need the Admin
@@ -378,14 +472,18 @@ pub async fn gate_check(token: String) -> Result<Option<GateView>, ServerFnError
     Ok(Some(GateView { did, model_updates: models, admin }))
 }
 
-/// Docs gate behind a token: who is it, and is it on the approved list?
+/// Docs gate behind a token: who is it, and is it known to the store?
 #[server]
 pub async fn docs_content(token: String) -> Result<DocView, ServerFnError> {
     let Some(did) = caller_did(&token) else {
         return Err(ServerFnError::ServerError("No session. Sign in first.".into()));
     };
-    let approved = APPROVED.lock().map(|a| a.contains(&did)).unwrap_or(false);
-    Ok(DocView { did, approved })
+    let pool = match store_pool() {
+        Some(p) => p,
+        None => return Err(ServerFnError::ServerError("identity store not ready".into())),
+    };
+    let known = identity_store::get_identity(&pool, &did).await.map(|r| r.is_some()).unwrap_or(false);
+    Ok(DocView { did, approved: known })
 }
 
 /// Waiting identities for the owner tools page. Caller must hold Admin.
@@ -402,6 +500,104 @@ pub async fn pending_list(token: String) -> Result<Vec<PendingIdentity>, ServerF
         Err(_) => return Err(ServerFnError::ServerError("pending store locked".into())),
     };
     Ok(list)
+}
+
+/// Record a petition for access from an identity that proved secret ownership
+/// but is not yet known to this node. The owner must approve before sign-in
+/// is complete.
+#[server]
+pub async fn petition_access(did: String, display_name: String) -> Result<(), ServerFnError> {
+    let did = did.trim().to_string();
+    if !did_format_ok(&did) {
+        return Err(ServerFnError::ServerError("That is not a did:peer identity.".into()));
+    }
+    let pool = match store_pool() {
+        Some(p) => p,
+        None => return Err(ServerFnError::ServerError("identity store not ready".into())),
+    };
+    let id = format!("pet:{}:{}", did, now_epoch());
+    let _ = identity_store::upsert_petition(&pool, &id, &did, if display_name.is_empty() { None } else { Some(&display_name) }).await;
+    if let Ok(mut p) = PENDING.lock() {
+        p.insert(did.clone());
+    }
+    Ok(())
+}
+
+/// All pending petitions for the owner tools page. Caller must hold Admin.
+#[server]
+pub async fn list_petitions(token: String) -> Result<Vec<PetitionRow>, ServerFnError> {
+    let Some(did) = caller_did(&token) else {
+        return Err(ServerFnError::ServerError("No session. Sign in first.".into()));
+    };
+    if !matches!(level_of(&did).await, Some(exocore::protocol_internal::PermissionLevel::Admin)) {
+        return Err(ServerFnError::ServerError("Owner tools need the Admin delegation.".into()));
+    }
+    let pool = match store_pool() {
+        Some(p) => p,
+        None => return Err(ServerFnError::ServerError("identity store not ready".into())),
+    };
+    identity_store::list_petitions(&pool).await
+        .map_err(|e| -> ServerFnError { ServerFnError::ServerError(format!("could not list petitions: {e}")) })
+}
+
+/// Approve a petition: add the identity to the store and grant it access.
+/// Caller must hold Admin, except the bootstrapped owner on an empty store.
+#[server]
+pub async fn approve_petition(token: String, did: String) -> Result<(), ServerFnError> {
+    let Some(caller) = caller_did(&token) else {
+        return Err(ServerFnError::ServerError("No session. Sign in first.".into()));
+    };
+    let did = did.trim().to_string();
+    let admin = matches!(level_of(&caller).await, Some(exocore::protocol_internal::PermissionLevel::Admin));
+    let bootstrap = match std::env::var("OWNER_DID") {
+        Ok(owner) => owner.split(',').any(|o| o.trim() == caller),
+        Err(_) => false,
+    };
+    let pool = match store_pool() {
+        Some(p) => p,
+        None => return Err(ServerFnError::ServerError("identity store not ready".into())),
+    };
+    let empty = match identity_store::list_identities(&pool).await {
+        Ok(list) => list.is_empty(),
+        Err(_) => true,
+    };
+    if !(admin || (bootstrap && empty)) {
+        return Err(ServerFnError::ServerError("Owner tools need the Admin delegation.".into()));
+    }
+    // Add the identity to the store as known
+    if identity_store::get_identity(&pool, &did).await.map(|r| r.is_some()).unwrap_or(false) {
+        return Err(ServerFnError::ServerError("Identity is already known.".into()));
+    }
+    identity_store::insert_identity(&pool, &did, "person", None, None, None).await
+        .map_err(|e| -> ServerFnError { ServerFnError::ServerError(format!("could not approve identity: {e}")) })?;
+    identity_store::resolve_petition(&pool, &did, "approved").await
+        .map_err(|e| -> ServerFnError { ServerFnError::ServerError(format!("could not resolve petition: {e}")) })?;
+    if let Ok(mut p) = PENDING.lock() {
+        p.remove(&did);
+    }
+    Ok(())
+}
+
+/// Refuse a petition. Caller must hold Admin.
+#[server]
+pub async fn refuse_petition(token: String, did: String) -> Result<(), ServerFnError> {
+    let Some(caller) = caller_did(&token) else {
+        return Err(ServerFnError::ServerError("No session. Sign in first.".into()));
+    };
+    let did = did.trim().to_string();
+    if !matches!(level_of(&caller).await, Some(exocore::protocol_internal::PermissionLevel::Admin)) {
+        return Err(ServerFnError::ServerError("Owner tools need the Admin delegation.".into()));
+    }
+    let pool = match store_pool() {
+        Some(p) => p,
+        None => return Err(ServerFnError::ServerError("identity store not ready".into())),
+    };
+    identity_store::resolve_petition(&pool, &did, "refused").await
+        .map_err(|e| -> ServerFnError { ServerFnError::ServerError(format!("could not resolve petition: {e}")) })?;
+    if let Ok(mut p) = PENDING.lock() {
+        p.remove(&did);
+    }
+    Ok(())
 }
 
 /// Grant a delegation. Caller must hold Admin, except the bootstrapped owner
@@ -449,12 +645,27 @@ pub async fn grant_access(token: String, delegatee: String, level: String) -> Re
     if !cap.verify() {
         return Err(ServerFnError::ServerError("Fresh delegation failed its own check.".into()));
     }
-    {
-        use exocore::network_internal::CAPABILITY_STORE;
-        let mut store = CAPABILITY_STORE.write().await;
-        store.entry(updates_namespace()).or_default().insert(delegatee.clone(), want);
+    let pool = match store_pool() {
+        Some(p) => p,
+        None => return Err(ServerFnError::ServerError("identity store not ready".into())),
+    };
+    let ns_hex = bs58::encode(updates_namespace()).into_string();
+    if let Err(e) = identity_store::upsert_delegation(
+        &pool,
+        &format!("{}:{}", ns_hex, delegatee),
+        &node_did,
+        &delegatee,
+        &ns_hex,
+        match want {
+            exocore::protocol_internal::PermissionLevel::Read => "read",
+            exocore::protocol_internal::PermissionLevel::Write => "write",
+            exocore::protocol_internal::PermissionLevel::Admin => "admin",
+        },
+        &cap.signature,
+        None,
+    ).await {
+        return Err(ServerFnError::ServerError(format!("could not persist delegation: {e}")));
     }
-    persist_delegations().await;
     if let Ok(mut p) = PENDING.lock() {
         p.remove(&delegatee);
     }
@@ -477,7 +688,6 @@ pub async fn revoke_access(token: String, delegatee: String) -> Result<(), Serve
             map.remove(delegatee.trim());
         }
     }
-    persist_delegations().await;
     Ok(())
 }
 
@@ -494,15 +704,16 @@ pub async fn read_settings(token: String) -> Result<VisitorSettings, ServerFnErr
     let Some(did) = caller_did(&token) else {
         return Err(ServerFnError::ServerError("No session. Sign in first.".into()));
     };
-    let path = std::path::Path::new("exostorage").join("site-settings.json");
-    if let Ok(json) = std::fs::read_to_string(path) {
-        if let Ok(map) = serde_json::from_str::<HashMap<String, VisitorSettings>>(&json) {
-            if let Some(s) = map.get(&did) {
-                return Ok(s.clone());
-            }
-        }
-    }
-    Ok(VisitorSettings::default())
+    let pool = match store_pool() {
+        Some(p) => p,
+        None => return Ok(VisitorSettings::default()),
+    };
+    let appearance = identity_store::get_site_setting(&pool, &did, "appearance").await.unwrap_or_default();
+    let width = identity_store::get_site_setting(&pool, &did, "width").await.unwrap_or_default();
+    Ok(VisitorSettings {
+        appearance: appearance.unwrap_or_default(),
+        width: width.unwrap_or_default(),
+    })
 }
 
 /// Save the visitor's server-side settings copy. Signed-in visitors only.
@@ -512,20 +723,17 @@ pub async fn save_settings(token: String, settings: VisitorSettings) -> Result<(
     let Some(did) = caller_did(&token) else {
         return Err(ServerFnError::ServerError("No session. Sign in first.".into()));
     };
-    let path = std::path::Path::new("exostorage").join("site-settings.json");
-    let mut map: HashMap<String, VisitorSettings> = std::fs::read_to_string(&path)
-        .ok()
-        .and_then(|j| serde_json::from_str(&j).ok())
-        .unwrap_or_default();
-    map.insert(did, settings);
-    let _ = std::fs::create_dir_all("exostorage");
-    match serde_json::to_string(&map) {
-        Ok(json) => match std::fs::write(path, json) {
-            Ok(()) => Ok(()),
-            Err(_) => Err(ServerFnError::ServerError("Settings did not save.".into())),
-        },
-        Err(_) => Err(ServerFnError::ServerError("Settings did not encode.".into())),
+    let pool = match store_pool() {
+        Some(p) => p,
+        None => return Err(ServerFnError::ServerError("identity store not ready".into())),
+    };
+    if let Err(e) = identity_store::set_site_setting(&pool, &did, "appearance", &settings.appearance).await {
+        return Err(ServerFnError::ServerError(format!("could not save settings: {e}")));
     }
+    if let Err(e) = identity_store::set_site_setting(&pool, &did, "width", &settings.width).await {
+        return Err(ServerFnError::ServerError(format!("could not save settings: {e}")));
+    }
+    Ok(())
 }
 
 /// Willow userland: the source of truth for who can sign in.
@@ -567,47 +775,24 @@ impl Default for SiteFlags {
 }
 
 #[cfg(feature = "ssr")]
-fn willow_dir() -> std::path::PathBuf {
-    std::path::Path::new("exostorage").join("willow")
-}
-
-#[cfg(feature = "ssr")]
-fn users_file() -> std::path::PathBuf {
-    willow_dir().join("users.json")
-}
-
-#[cfg(feature = "ssr")]
-fn flags_file() -> std::path::PathBuf {
-    willow_dir().join("site-flags.json")
-}
-
-#[cfg(feature = "ssr")]
-fn load_users() -> HashMap<String, UserProfile> {
-    std::fs::read_to_string(users_file())
-        .ok()
-        .and_then(|j| serde_json::from_str(&j).ok())
-        .unwrap_or_default()
-}
-
-#[cfg(feature = "ssr")]
-fn save_users(map: &HashMap<String, UserProfile>) {
-    let _ = std::fs::create_dir_all(willow_dir());
-    if let Ok(json) = serde_json::to_string(map) {
-        let _ = std::fs::write(users_file(), json);
+async fn users_empty() -> bool {
+    match store_pool() {
+        Some(pool) => identity_store::identities_empty(&pool).await.unwrap_or(true),
+        None => true,
     }
 }
 
 #[cfg(feature = "ssr")]
-fn users_empty() -> bool {
-    load_users().is_empty()
-}
-
-#[cfg(feature = "ssr")]
-fn site_flags() -> SiteFlags {
-    std::fs::read_to_string(flags_file())
-        .ok()
-        .and_then(|j| serde_json::from_str(&j).ok())
-        .unwrap_or_default()
+async fn site_flags() -> SiteFlags {
+    let pool = match store_pool() {
+        Some(p) => p,
+        None => return SiteFlags::default(),
+    };
+    let disabled = match identity_store::get_site_flag(&pool, "disable_new_users").await {
+        Ok(Some(v)) => v == "true",
+        _ => false,
+    };
+    SiteFlags { disable_new_users: disabled }
 }
 
 #[cfg(feature = "ssr")]
@@ -624,54 +809,42 @@ fn is_owner_did(did: &str) -> bool {
 }
 
 #[cfg(feature = "ssr")]
-fn short_did(did: &str) -> String {
-    let tail: String = did.chars().rev().take(8).collect::<String>().chars().rev().collect();
-    format!("…{tail}")
-}
-
-#[cfg(feature = "ssr")]
-fn upsert_profile(did: &str, display_name: String, avatar: String) {
-    let mut map = load_users();
-    let entry = map.entry(did.to_string()).or_insert(UserProfile {
-        display_name: display_name.clone(),
-        avatar: avatar.clone(),
-        created_ms: now_epoch() * 1000,
-    });
-    if !display_name.is_empty() {
-        entry.display_name = display_name;
-    }
-    if !avatar.is_empty() {
-        entry.avatar = avatar;
-    }
-    save_users(&map);
-}
-
-/// Check a signing-in identity into the Willow user list. First sight
-/// gets a readable default name derived from the identity itself.
-#[cfg(feature = "ssr")]
-fn ensure_profile(did: &str) {
-    let map = load_users();
-    if !map.contains_key(did) {
-        upsert_profile(did, short_did(did), String::new());
-    }
+async fn upsert_profile(did: &str, display_name: &str, avatar: &str) -> Result<(), sqlx::Error> {
+    let pool = store_pool().ok_or_else(|| sqlx::Error::RowNotFound)?;
+    identity_store::upsert_identity(
+        &pool,
+        did,
+        if display_name.is_empty() { None } else { Some(display_name) },
+        if avatar.is_empty() { None } else { Some(avatar) },
+    ).await
 }
 
 /// Identities the local Willow store knows, newest first.
 #[server]
 pub async fn users_list() -> Result<Vec<PublicUser>, ServerFnError> {
-    let map = load_users();
-    let mut rows: Vec<PublicUser> = map
-        .into_iter()
-        .map(|(did, p)| PublicUser { did, display_name: p.display_name, has_avatar: !p.avatar.is_empty() })
-        .collect();
-    rows.sort_by(|a, b| b.did.cmp(&a.did));
-    Ok(rows)
+    let pool = match store_pool() {
+        Some(p) => p,
+        None => return Ok(vec![]),
+    };
+    identity_store::list_identities(&pool).await
+        .map(|list| list.into_iter().map(|u| PublicUser {
+            did: u.did,
+            display_name: u.display_name.unwrap_or_default(),
+            has_avatar: !u.avatar.clone().unwrap_or_default().is_empty(),
+        }).collect())
+        .map_err(|e| ServerFnError::ServerError(format!("could not list identities: {e}")))
 }
 
 /// Avatar image for a known identity. Empty when none was set.
 #[server]
 pub async fn user_avatar(did: String) -> Result<String, ServerFnError> {
-    Ok(load_users().get(did.trim()).map(|p| p.avatar.clone()).unwrap_or_default())
+    let pool = match store_pool() {
+        Some(p) => p,
+        None => return Ok(String::new()),
+    };
+    identity_store::get_identity(&pool, &did).await
+        .map(|r| r.and_then(|i| i.avatar).unwrap_or_default())
+        .map_err(|e| ServerFnError::ServerError(format!("could not read avatar: {e}")))
 }
 
 /// Update your own display name and avatar. Reading and updating stay
@@ -688,11 +861,22 @@ pub async fn update_profile(token: String, display_name: String, avatar: String)
     if avatar.len() > 262144 {
         return Err(ServerFnError::ServerError("That avatar image is too large.".into()));
     }
-    upsert_profile(&did, display_name, avatar);
+    let pool = match store_pool() {
+        Some(p) => p,
+        None => return Err(ServerFnError::ServerError("identity store not ready".into())),
+    };
+    if let Err(e) = identity_store::upsert_identity(
+        &pool,
+        &did,
+        Some(&display_name),
+        if avatar.is_empty() { None } else { Some(&avatar) },
+    ).await {
+        return Err(ServerFnError::ServerError(format!("could not update profile: {e}")));
+    }
     Ok(())
 }
 
-/// Remove an identity from the Willow user list. Removing pauses with
+/// Remove an identity from the identity store. Removing pauses with
 /// creation while the owner flag is on, except for the owner.
 #[server]
 pub async fn delete_identity(token: String, did: String) -> Result<(), ServerFnError> {
@@ -704,12 +888,17 @@ pub async fn delete_identity(token: String, did: String) -> Result<(), ServerFnE
     if caller != did && !owner {
         return Err(ServerFnError::ServerError("You can only remove your own identity.".into()));
     }
-    if site_flags().disable_new_users && !owner {
+    let pool = match store_pool() {
+        Some(p) => p,
+        None => return Err(ServerFnError::ServerError("identity store not ready".into())),
+    };
+    let flags = site_flags().await;
+    if flags.disable_new_users && !owner {
         return Err(ServerFnError::ServerError("Removing identities is paused by the owner.".into()));
     }
-    let mut map = load_users();
-    map.remove(&did);
-    save_users(&map);
+    if let Err(e) = identity_store::delete_identity(&pool, &did).await {
+        return Err(ServerFnError::ServerError(format!("could not remove identity: {e}")));
+    }
     if let Ok(mut s) = SESSIONS.lock() {
         s.retain(|_, d| d != &did);
     }
@@ -719,7 +908,7 @@ pub async fn delete_identity(token: String, did: String) -> Result<(), ServerFnE
 /// Read the mesh-wide site flags.
 #[server]
 pub async fn get_flags() -> Result<SiteFlags, ServerFnError> {
-    Ok(site_flags())
+    Ok(site_flags().await)
 }
 
 /// Set the mesh-wide site flags. Owner identities only.
@@ -731,14 +920,14 @@ pub async fn set_flags(token: String, flags: SiteFlags) -> Result<(), ServerFnEr
     if !is_owner_did(&caller) {
         return Err(ServerFnError::ServerError("Only the owner changes site flags.".into()));
     }
-    let _ = std::fs::create_dir_all(willow_dir());
-    match serde_json::to_string(&flags) {
-        Ok(json) => match std::fs::write(flags_file(), json) {
-            Ok(()) => Ok(()),
-            Err(_) => Err(ServerFnError::ServerError("Flags did not save.".into())),
-        },
-        Err(_) => Err(ServerFnError::ServerError("Flags did not encode.".into())),
+    let pool = match store_pool() {
+        Some(p) => p,
+        None => return Err(ServerFnError::ServerError("identity store not ready".into())),
+    };
+    if let Err(e) = identity_store::set_site_flag(&pool, "disable_new_users", if flags.disable_new_users { "true" } else { "false" }).await {
+        return Err(ServerFnError::ServerError(format!("could not save flags: {e}")));
     }
+    Ok(())
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -857,5 +1046,11 @@ pub fn drop_session(_did: &str) {}
 /// Display name for a known identity. Empty when unknown.
 #[server]
 pub async fn user_display_name(did: String) -> Result<String, ServerFnError> {
-    Ok(load_users().get(did.trim()).map(|p| p.display_name.clone()).unwrap_or_default())
+    let pool = match store_pool() {
+        Some(p) => p,
+        None => return Ok(String::new()),
+    };
+    identity_store::get_identity(&pool, &did).await
+        .map(|r| r.and_then(|i| i.display_name).unwrap_or_default())
+        .map_err(|e| ServerFnError::ServerError(format!("could not read display name: {e}")))
 }

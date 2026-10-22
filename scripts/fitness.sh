@@ -17,20 +17,15 @@ else
   pass "F1 no motion code in server sources"
 fi
 
-# F2 — two-identity gate seed (exosystems-exoauth.md, SR2):
-# allowed_dids.json must hold at least two did:peer entries.
-DIDS=$(python3 -c "
-import json,sys
-try:
-    d=json.load(open('$ROOT/allowed_dids.json'))
-    print(sum(1 for x in d if isinstance(x,str) and x.startswith('did:peer:')))
-except Exception:
-    print(0)
-" 2>/dev/null)
-if [ "${DIDS:-0}" -ge 2 ] 2>/dev/null; then
-  pass "F2 allowlist holds $DIDS approved identities"
+# F2 — no static allowlist; boot and sign-in read the SQLite identity store.
+# allowed_dids.json was deleted when the SQLite store landed. Its presence is a
+# failure; its absence and a present migration file are the passing state.
+if [ -f "$ROOT/allowed_dids.json" ]; then
+  fail "F2 static allowlist still present at allowed_dids.json; it must not exist"
+elif [ -f "$ROOT/migrations/0001_identity_store.sql" ]; then
+  pass "F2 allowlist removed; SQLite identity-store migration present"
 else
-  fail "F2 allowlist holds ${DIDS:-0} identities, need 2"
+  fail "F2 neither an allowlist nor an identity-store migration found"
 fi
 
 # F3 — decision log integrity (decisions/README.md):

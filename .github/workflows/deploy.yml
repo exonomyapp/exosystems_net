@@ -37,7 +37,6 @@ jobs:
           mkdir -p deploy/site
           cp target/release/exosystems_net deploy/exosystems_net-ssr
           cp -r target/site/* deploy/site/
-          cp allowed_dids.json deploy/allowed_dids.json
       - name: Upload artifact
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: actions/upload-artifact@v4
@@ -75,7 +74,6 @@ jobs:
             systemctl stop exosystems-net || true
             cp /opt/exosystems_net/incoming/deploy/exosystems_net-ssr /opt/exosystems_net/bin/exosystems_net-ssr
             chmod +x /opt/exosystems_net/bin/exosystems_net-ssr
-            cp /opt/exosystems_net/incoming/deploy/allowed_dids.json /opt/exosystems_net/allowed_dids.json
             rm -rf /opt/exosystems_net/site/pkg
             cp -r /opt/exosystems_net/incoming/deploy/site/* /opt/exosystems_net/site/
             cat > /etc/systemd/system/exosystems-net.service <<'UNIT'

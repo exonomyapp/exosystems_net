@@ -5,19 +5,16 @@
 async fn main() {
     use axum::Router;
     use exosystems_net::app::*;
+    use exosystems_net::auth::init_store;
     use leptos::logging::log;
     use leptos::prelude::*;
     use leptos_axum::{generate_route_list, LeptosRoutes};
 
     let conf = get_configuration(None).unwrap();
-    let addr = conf.leptos_options.site_addr;
-    let approved: Vec<String> = std::fs::read_to_string("allowed_dids.json")
-        .ok()
-        .and_then(|s| serde_json::from_str(&s).ok())
-        .unwrap_or_default();
-    log!("approved identities: {}", approved.len());
-    exosystems_net::auth::seed_approved(approved);
-    let leptos_options = conf.leptos_options;
+    init_store().await.expect("identity store must open at boot");
+    log!("identity store opened");
+    let leptos_options = conf.leptos_options.clone();
+    let addr = leptos_options.site_addr;
     let routes = generate_route_list(App);
 
     let app = Router::new()
