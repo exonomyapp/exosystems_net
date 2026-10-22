@@ -32,6 +32,18 @@ Two structural defects were corrected. The masthead had declared itself a query 
 
 The Model Updates feature moved into the main application and the `model-updates/` folder retired: the models interface is a route of Exosystems.net with the shared main-page session, the delegation gate, and the shared gadgetry. Git commit `659caaa` records "Shape B: Model Updates merged into the main Leptos site with single sign-on, plus push-to-deploy workflow" (2026-10-09).
 
+## Sign-in
+
+The sign-in is not finished. It works on the live site today, and it works on three JSON files on the instance.
+
+- `allowed_dids.json` is read at boot into the approved list, and the gated docs view reads that list.
+- `exostorage/willow/users.json` holds the profiles of the identities the sign-in page knows.
+- `exostorage/capabilities.json` holds the delegations, written there by the ExoCore capability store.
+
+The identities belong in the Exosystems identity store, which is the node's SQLite store reached through ExoAuth and ExoCore, and the JSON files retire with it. Row 1 of the register carries the node onto the instance. Row 7 carries the boot and the sign-in onto the node's identity store and deletes the seeded file. Row 7 was blocked on row 1.
+
+The measure of success for the sign-in is that the identities, the delegations and the approved list live in the Exosystems identity store and the JSON files are gone. The sign-in page answering, and the owner tools appearing, are not the measure. Nothing in this session changed that measure, and the bootstrap-owner path added to `src/auth.rs` on 2026-10-22 is an arrangement on the JSON files, not a step toward the Exosystems store.
+
 ## Exosystems Email Services
 
 The Exosystems mail system is specified in `docs/decisions/exosystems-email-services.md`, which replaced the earlier Brevo-specific decision record and carries the whole arrangement.
@@ -55,6 +67,8 @@ The Brevo API key now stands in the instance's credential file beside the SMTP p
 ## What's Next
 
 The next steps draw from the register of open decisions at `docs/decisions/pending.md`. A row moves from the register into this section when it is taken up, and the register records its closure; a row taken up here and closed leaves this section and the register together, with the closure in the record the register names.
+
+The sign-in is the first measure on this list, and it is measured against the Exosystems identity store, as the Sign-in section above states. Row 1 carries the node onto the instance. Row 7 carries the boot and the sign-in onto that node's identity store and deletes the seeded file.
 
 Owner onboarding first: the owner creates an identity on the main sign-in page, receives the first Admin delegation through the bootstrap path, and grants from the owner tools, which unlocks the gated models route for real use. Next the provider admission work: free-name filter plus live endpoint testing against the hosted database, then a full proving round with the registry and history counts refreshed into the README.
 

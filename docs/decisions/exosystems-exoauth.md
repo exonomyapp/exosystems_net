@@ -70,22 +70,3 @@ Where the Decision above says "node linking", it means conscire:
 the Conscire verb governs the relationship throughout these
 records. Approval is the node owner's policy decision; nothing in
 the flow forces the node.
-
-## Addendum 2026-10-22 — the owner identity
-
-The two identities seeded on 2026-09-26 were written into
-`allowed_dids.json` and the instance's credential file, and their
-secrets were never kept. Neither identity could sign in, and the
-owner's tools were unreachable on the live site, because the
-application's own calls were answered by a routing error on the way
-(see `ship-the-nginx-configuration-with-the-deployment.md`).
-
-The owner identity is now `did:peer:2.VzwrWZ1eCZd48Y6TgRCzseHkxhVydYXUPQDP4h14e4zsq`,
-created through the sign-in page on 2026-10-22, with its secret in the
-owner's hands. The instance's credential file names it in `OWNER_DID`,
-and it holds the operator surfaces while the delegation store is empty.
-
-The two seeded identities stay in `allowed_dids.json` because the
-fitness check holds the approved list to two entries and no second
-live identity exists yet. They name accounts that no one can reach.
-The owner's identity is the third entry, and it can sign in.
