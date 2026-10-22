@@ -87,10 +87,10 @@ fn new_nonce() -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
 
-/// Namespace under which model-updates delegations live.
+/// Namespace under which Models delegations live.
 #[cfg(feature = "ssr")]
 fn updates_namespace() -> [u8; 32] {
-    exocore::protocol_internal::derive_namespace("model-updates")
+    exocore::protocol_internal::derive_namespace("models")
 }
 
 /// A freshly generated identity. The secret is shown once, at creation.
@@ -278,7 +278,7 @@ pub async fn create_identity(display_name: String, avatar: String) -> Result<New
     if let Err(e) = identity_store::insert_identity(
         &pool,
         &did,
-        "person",
+        "exotalk",
         None,
         Some(&display_name),
         if avatar.is_empty() { None } else { Some(&avatar) },
@@ -568,7 +568,7 @@ pub async fn approve_petition(token: String, did: String) -> Result<(), ServerFn
     if identity_store::get_identity(&pool, &did).await.map(|r| r.is_some()).unwrap_or(false) {
         return Err(ServerFnError::ServerError("Identity is already known.".into()));
     }
-    identity_store::insert_identity(&pool, &did, "person", None, None, None).await
+    identity_store::insert_identity(&pool, &did, "exotalk", None, None, None).await
         .map_err(|e| -> ServerFnError { ServerFnError::ServerError(format!("could not approve identity: {e}")) })?;
     identity_store::resolve_petition(&pool, &did, "approved").await
         .map_err(|e| -> ServerFnError { ServerFnError::ServerError(format!("could not resolve petition: {e}")) })?;

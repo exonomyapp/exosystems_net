@@ -21,7 +21,7 @@ between them are the way they are.
 | 34 | [Implement hardening on the Tencent Lighthouse instance](implement-hardening-on-tencent-lighthouse.md) | Accepted | 2026-10-09 |  |
 | 33 | [Shape the Settings page as the identity and mesh console](shape-settings-page-as-identity-and-mesh-console.md) | Proposed | 2026-10-09 | R2, R6, R7, R10, R17, R19, R25, R27, R32 |
 | 32 | [Application-layer notifications over Willow entries and Iroh gossip](application-layer-notifications-over-willow-gossip.md) | Proposed | 2026-10-08 |  |
-| 31 | [Serve Model Updates data from boltstore on exosystems.net](serve-model-data-from-hosted-sqlite-endpoint.md) | Proposed | 2026-10-08 |  |
+| 31 | [Serve Models data from boltstore on exosystems.net](serve-model-data-from-hosted-sqlite-endpoint.md) | Proposed | 2026-10-08 |  |
 | 30 | [Deploy exo-mcp with DBOS and Postgres to Lighthouse](deploy-exo-mcp-with-dbos-and-postgres-to-lighthouse.md) | Proposed | 2026-10-02 |  |
 | 29 | [Install nexo-rs on Lighthouse](install-nexo-rs-on-lighthouse.md) | Proposed | 2026-10-02 |  |
 | 28 | [Integrate the exo-mcp memory gateway into the tooling workflow](integrate-exo-mcp-memory-gateway-into-tooling.md) | Proposed | 2026-09-30 |  |

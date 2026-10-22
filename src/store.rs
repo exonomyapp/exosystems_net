@@ -1,6 +1,6 @@
-//! Model Updates Leptos site: verification dashboard with live operations.
+//! Models Leptos site: verification dashboard with live operations.
 //!
-//! Round data flows from the boltstore `model-updates` database over HTTP.
+//! Round data flows from the boltstore `models` database over HTTP.
 //! Delegations flow from the Willow capabilities namespace, read directly
 //! by the gate after sign-in. Menu visibility follows delegations.
 
@@ -31,7 +31,7 @@ pub async fn registry_rows() -> Result<Vec<ModelRow>, ServerFnError> {
         Err(_) => return Err(ServerFnError::ServerError("dashboard key unset".into())),
     };
     let resp = match reqwest::Client::new()
-        .post(format!("{}/api/databases/model-updates/query", store_base()))
+        .post(format!("{}/api/databases/models/query", store_base()))
         .bearer_auth(key)
         .json(&serde_json::json!({
             "sql": "SELECT model_id, provider, context_window, last_tested, is_active FROM model_registry ORDER BY provider, model_id"
