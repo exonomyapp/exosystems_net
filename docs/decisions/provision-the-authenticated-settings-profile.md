@@ -62,6 +62,10 @@ The sections that read the node's store stay unavailable until the node is deplo
 - The application reading the approved identity list from the node's identity store, retiring the seeded allowlist per pending row 7.
 - The console's mail operations section: the mailbox list with its create and remove actions.
 
+## Addendum 2026-10-23 — avatar upload on identity creation
+
+The "No identity yet" card now carries a file field that reads the chosen image as a data URL in the browser (190 KB client limit, 256 KB server limit) and passes it through `create_identity` into the identity store, so a new identity can carry an avatar from the moment it is created. The identity chip and the settings list render the avatar, falling back to the initial letter when none is present. This realises the Profile section's display name and avatar entry in the table above.
+
 ## Addendum 2026-10-22 — the Brevo API key and the mailbox section
 
 The Brevo API key stands in the instance's credential file beside the SMTP login and key, and the file keeps owner-only permissions. The console's mail-operations section is built: the Settings page carries a Mailboxes section that lists the domain's mailboxes with their addresses and sending names, creates a mailbox with its account, password, mail store, alias and webmail user, and withdraws one, which leaves the mail store on the instance as the archive. Its record is `manage-mailboxes-from-the-settings-console.md`.

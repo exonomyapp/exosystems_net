@@ -9,10 +9,10 @@ use leptos_router::{
 use crate::auth::{
     active_did, answer_nonce, approve_petition, clear_token, create_identity, delete_identity,
     docs_content, drop_session, gate_check, get_flags, grant_access, live_sessions, list_petitions,
-    pending_list, petition_access, read_saved_secret, read_settings, read_token, request_nonce,
-    refuse_petition, revoke_access, save_settings, set_flags, sign_out, stash_session,
-    store_saved_secret, switch_session, update_profile, user_avatar, user_display_name,
-    users_list, VisitorSettings,
+    pending_list, petition_access, read_flag, read_saved_secret, read_settings, read_token,
+    request_nonce, refuse_petition, revoke_access, save_settings, set_flags, sign_out,
+    stash_session, store_flag, store_saved_secret, switch_session, update_profile, user_avatar,
+    user_display_name, users_list, VisitorSettings,
 };
 use crate::mail::{create_mailbox, mailbox_list, remove_mailbox};
 use crate::store::{registry_rows, ModelRow};
@@ -591,8 +591,12 @@ fn SigninPage() -> impl IntoView {
     let (did_input, set_did_input) = signal(String::new());
     let (secret_input, set_secret_input) = signal(String::new());
     let (name_input, set_name_input) = signal(String::new());
-    let (save_secret, set_save_secret) = signal(false);
+    let (avatar_input, set_avatar_input) = signal(String::new());
+    let (avatar_file_name, set_avatar_file_name) = signal(String::new());
+    let (save_secret_signin, set_save_secret_signin) = signal(read_flag("exo_save_secret_signin"));
+    let (save_secret_create, set_save_secret_create) = signal(read_flag("exo_save_secret_create"));
     let (notice, set_notice) = signal(String::new());
+    let (create_notice, set_create_notice) = signal(String::new());
     let (answered, set_answered) = signal(String::new());
     let (petition_did, set_petition_did) = signal(String::new());
     let (petition_open, set_petition_open) = signal(false);
@@ -622,49 +626,61 @@ fn SigninPage() -> impl IntoView {
     });
 
     Effect::new_sync(move |_| {
+        #[allow(unused_variables)]
         let nav = navigate.clone();
         if let Some(Ok(nonce)) = nonce_action.value().get() {
-            if answered.get() == nonce {
-                return;
-            }
-            set_answered.set(nonce.clone());
-            let did = did_input.get();
-            let nonce_send = nonce.clone();
-            let should_save = save_secret.get();
-            match sign_challenge(&secret_input.get(), &nonce) {
-                Ok(sig) => {
-                    leptos::task::spawn_local(async move {
-                        match answer_nonce(did.clone(), nonce_send, sig).await {
-                            Ok(result) => {
-                                stash_session(&did, &result.token);
-                                if should_save {
-                                    store_saved_secret(&did, &secret_input.get());
+            if answered.get() != nonce {
+                set_answered.set(nonce.clone());
+                let did = did_input.get();
+                let nonce_send = nonce.clone();
+                let should_save = save_secret_signin.get();
+                match sign_challenge(&secret_input.get(), &nonce) {
+                    Ok(sig) => {
+                        leptos::task::spawn_local(async move {
+                            match answer_nonce(did.clone(), nonce_send, sig).await {
+                                Ok(result) => {
+                                    stash_session(&did, &result.token);
+                                    if should_save {
+                                        store_saved_secret(&did, &secret_input.get());
+                                    }
+                                    if result.needs_approval {
+                                        set_petition_did.set(did);
+                                        set_petition_open.set(true);
+                                    } else {
+                                        // A full reload re-enters the application with
+                                        // the stored session token, so the signed-in
+                                        // state is visible everywhere from the first
+                                        // paint.
+                                        #[cfg(target_arch = "wasm32")]
+                                        {
+                                            let _ = web_sys::window()
+                                                .map(|w| w.location().set_href("/"));
+                                        }
+                                        #[cfg(not(target_arch = "wasm32"))]
+                                        {
+                                            nav("/", Default::default());
+                                        }
+                                    }
                                 }
-                                if result.needs_approval {
-                                    set_petition_did.set(did);
-                                    set_petition_open.set(true);
-                                } else {
-                                    nav("/", Default::default());
-                                }
+                                Err(e) => set_notice.set(format!("Not signed in: {e}")),
                             }
-                            Err(e) => set_notice.set(format!("Not signed in: {e}")),
-                        }
-                    });
+                        });
+                    }
+                    Err(e) => set_notice.set(e),
                 }
-                Err(e) => set_notice.set(e),
             }
         }
         if let Some(Ok(fresh)) = create_action.value().get() {
             stash_session(&fresh.did, &fresh.token);
-            if save_secret.get() {
+            if save_secret_create.get() {
                 store_saved_secret(&fresh.did, &fresh.secret);
             }
-            set_notice.set(format!(
-                "New identity {} signed in. Its secret is {}. It is shown once, and it is the key to this identity. The owner grants powers on the settings page.",
-                fresh.did, fresh.secret
+            set_create_notice.set(format!(
+                "Your identity is ready and you are signed in. This is your secret — it is shown only this once, so save it somewhere safe: {}. When you need powers on this site, they are granted from the settings page.",
+                fresh.secret
             ));
         } else if let Some(Err(e)) = create_action.value().get() {
-            set_notice.set(format!("The identity was not created: {e}"));
+            set_create_notice.set(format!("We could not create that identity: {e}"));
         }
     });
 
@@ -687,7 +703,7 @@ fn SigninPage() -> impl IntoView {
                                         set_did_input.set(did.clone());
                                         if let Some(saved_secret) = &saved {
                                             set_secret_input.set(saved_secret.clone());
-                                            set_save_secret.set(true);
+                                            set_save_secret_signin.set(true);
                                         }
                                         nonce_action.dispatch(did.clone());
                                     }>
@@ -709,10 +725,13 @@ fn SigninPage() -> impl IntoView {
                         <label>
                             <input
                                 type="checkbox"
-                                prop:checked=save_secret
-                                on:change=move |_| set_save_secret.update(|v| *v = !*v)
+                                prop:checked=save_secret_signin
+                                on:change=move |_| {
+                                    set_save_secret_signin.update(|v| *v = !*v);
+                                    store_flag("exo_save_secret_signin", save_secret_signin.get());
+                                }
                             />
-                            "Save this secret on this device"
+                            "Save this secret locally"
                         </label>
                         <p class="notice">"Saved in browser storage. Anyone with access to this device can use it."</p>
                     </div>
@@ -735,19 +754,61 @@ fn SigninPage() -> impl IntoView {
                                 <label>"Display name"</label>
                                 <input placeholder="Display name" on:input=move |ev| set_name_input.set(event_target_value(&ev))/>
                             </div>
+                            <div class="field">
+                                <label>"Avatar image"</label>
+                                <input type="file" accept="image/*" on:change=move |_ev| {
+                                    set_avatar_input.set(String::new());
+                                    set_avatar_file_name.set(String::new());
+                                    set_create_notice.set(String::new());
+                                    #[cfg(target_arch = "wasm32")]
+                                    {
+                                        use wasm_bindgen::closure::Closure;
+                                        use wasm_bindgen::JsCast;
+                                        let input: web_sys::HtmlInputElement = event_target(&_ev);
+                                        let Some(file) = input.files().and_then(|f| f.item(0)) else { return };
+                                        if file.size() > 190_000.0 {
+                                            set_create_notice.set("That image is too large — please choose one smaller than 190 KB.".to_string());
+                                            return;
+                                        }
+                                        let name = file.name();
+                                        if let Ok(reader) = web_sys::FileReader::new() {
+                                            let r = reader.clone();
+                                            let set_a = set_avatar_input;
+                                            let set_n = set_avatar_file_name;
+                                            let cb = Closure::wrap(Box::new(move |_| {
+                                                if let Ok(res) = r.result() {
+                                                    if let Some(data) = res.as_string() {
+                                                        set_a.set(data);
+                                                        set_n.set(name.clone());
+                                                    }
+                                                }
+                                            }) as Box<dyn FnMut(web_sys::Event)>);
+                                            reader.set_onloadend(Some(cb.as_ref().unchecked_ref()));
+                                            cb.forget();
+                                            let _ = reader.read_as_data_url(&file);
+                                        }
+                                    }
+                                }/>
+                                {move || { let n = avatar_file_name.get(); if n.is_empty() { view!{}.into_any() } else { view!{ <p class="notice">{format!("Loaded: {n}")}</p> }.into_any() } }}
+                            </div>
                             <div class="btn-row">
                                 <button on:click=move |_| {
-                                    create_action.dispatch((name_input.get(), String::new()));
+                                    set_create_notice.set(String::new());
+                                    create_action.dispatch((name_input.get(), avatar_input.get()));
                                 }>"Generate identity"</button>
                             </div>
+                            {move || { let n = create_notice.get(); if n.is_empty() { view!{}.into_any() } else { view!{ <p class="notice">{n}</p> }.into_any() } }}
                             <div class="field">
                                 <label>
                                     <input
                                         type="checkbox"
-                                        prop:checked=save_secret
-                                        on:change=move |_| set_save_secret.update(|v| *v = !*v)
+                                        prop:checked=save_secret_create
+                                        on:change=move |_| {
+                                            set_save_secret_create.update(|v| *v = !*v);
+                                            store_flag("exo_save_secret_create", save_secret_create.get());
+                                        }
                                     />
-                                    "Save this secret on this device"
+                                    "Save this secret locally"
                                 </label>
                                 <p class="notice">"Saved in browser storage. Anyone with access to this device can use it."</p>
                             </div>

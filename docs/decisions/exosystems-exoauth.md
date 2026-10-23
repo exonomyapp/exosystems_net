@@ -70,3 +70,13 @@ Where the Decision above says "node linking", it means conscire:
 the Conscire verb governs the relationship throughout these
 records. Approval is the node owner's policy decision; nothing in
 the flow forces the node.
+
+## Addendum 2026-10-23 — two distinct sign-in contexts
+
+Signing in to the application establishes the ExoTalk user context and unlocks the user's Willow store. That is the first action and it happens through the application's own sign-in flow. Consciring with the Conscia node is a separate, later action that the application performs on the user's behalf once that context exists: the application presents the user's `did:peer` to the node's conscire endpoint, the node's owner approves under the node's own policy, and the node records the capability. The application then shows which nodes the user conscires with, including the node that happens to run on the same instance. The application is both an ExoTalk-context application and a host for a Conscia node, and the two are distinct: signing in to the application does not sign the user in to any Conscia node, and the user's Willow store must be unlocked before any node relation can be known or displayed. The same secret-ownership proof (record: `prove-secret-ownership-at-sign-in.md`) is reused for both actions, but the actions remain separate.
+
+## Addendum 2026-10-23 — identity model and the meaning of "owner"
+
+A sign-in verifies a `did:peer` and opens that identity's Willow store. This does not require ExoTalk or Conscia to be installed or running; the iroh mesh and the Willow store alone are enough to verify who the user is. ExoTalk and Conscia are applications that build on top of that verified identity and store, not prerequisites for it. The exosystem supports two kinds of identity today: `exotalk` for users and `conscia` for non-user nodes. Applications (ExoTalk, ExoSoul, Conscia) and exoapps (Exonomy, Exocracy, RepubLet, and others) are consumers of the verified identity and store, not part of sign-in.
+
+Ownership in this system belongs to Willow stores and to Conscia nodes, not to users of an application. The "owner" that gains operator surfaces on an empty store is the identity named in `OWNER_DID` on the instance — the person who deployed that Conscia node. It is not an ExoTalk user who signed in, and no user becomes an owner by signing in. The bootstrap exists so the instance owner can reach the operator surfaces on first sign-in before any delegation records or joins exist; it is a property of that specific identity on that specific instance, not a general "first user" rule.

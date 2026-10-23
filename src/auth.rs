@@ -384,6 +384,35 @@ pub fn read_saved_secret(_did: &str) -> Option<String> {
 #[cfg(not(target_arch = "wasm32"))]
 pub fn clear_saved_secret(_did: &str) {}
 
+/// Persist a small named boolean choice (e.g. a checkbox) in browser
+/// storage so it survives reloads. Server builds get inert stubs.
+#[cfg(target_arch = "wasm32")]
+pub fn store_flag(key: &str, value: bool) {
+    let _ = web_sys::window()
+        .and_then(|w| w.local_storage().ok())
+        .flatten()
+        .map(|s| s.set_item(key, if value { "true" } else { "false" }));
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub fn store_flag(_key: &str, _value: bool) {}
+
+/// Read back a choice stored by `store_flag`. False when absent.
+#[cfg(target_arch = "wasm32")]
+pub fn read_flag(key: &str) -> bool {
+    web_sys::window()
+        .and_then(|w| w.local_storage().ok())
+        .flatten()
+        .and_then(|s| s.get_item(key).ok().flatten())
+        .map(|v| v == "true")
+        .unwrap_or(false)
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub fn read_flag(_key: &str) -> bool {
+    false
+}
+
 /// Everything below runs server-side against the capability store.
 /// The operator tools and the console's privileged sections need the Admin
 /// delegation. The owner named in OWNER_DID holds them on the bootstrap

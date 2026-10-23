@@ -41,3 +41,7 @@ conscired nodes on the profile page. Revocation behavior is
 verified, not assumed. Node-side conscire handling defects surface
 here rather than in the website lane; failures route to the node
 record, not to the sign-in flow.
+
+## Addendum 2026-10-23
+
+Consciring is a separate action from signing in to the application. The user first signs in to the application, which establishes the ExoTalk user context and unlocks the user's Willow store. Only then does the application present the user's `did:peer` to the node's conscire endpoint. The node's owner approves under the node's own policy, and the node records the capability. The application then shows which nodes the user conscires with. Signing in to the application does not, by itself, admit the user to the node, and the node's sign-in verification does not, by itself, sign the user in to the application.

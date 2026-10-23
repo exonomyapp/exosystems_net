@@ -1171,6 +1171,10 @@
             th { background: var(--surface); }
             a { color: var(--accent); }
             .notice { color: #e06c75; }
+            .family-card button,
+            .models button,
+            .id-list button,
+            .avatar-fallback { color: #000; }
         }
         html[data-appearance="dark"] { @include dark-palette; @include dark-overrides; }
         @media (prefers-color-scheme: dark) {
