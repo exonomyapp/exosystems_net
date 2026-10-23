@@ -20,10 +20,6 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use crate::identity_store;
 
 #[cfg(not(target_arch = "wasm32"))]
-static SESSIONS: LazyLock<Mutex<HashMap<String, String>>> =
-    LazyLock::new(|| Mutex::new(HashMap::new()));
-
-#[cfg(not(target_arch = "wasm32"))]
 static CHALLENGES: LazyLock<Mutex<HashMap<String, (String, u64)>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
@@ -214,16 +210,13 @@ pub async fn answer_nonce(did: String, nonce: String, signature_b58: String) -> 
         return Err(ServerFnError::ServerError("Signature check failed. The secret does not match the identity.".into()));
     }
     let token = new_token();
-    match SESSIONS.lock() {
-        Ok(mut s) => {
-            s.insert(token.clone(), did.clone());
-        }
-        Err(_) => return Err(ServerFnError::ServerError("sessions locked".into())),
-    }
     let pool = match store_pool() {
         Some(p) => p,
         None => return Err(ServerFnError::ServerError("identity store not ready".into())),
     };
+    if let Err(e) = identity_store::insert_session(&pool, &token, &did).await {
+        return Err(ServerFnError::ServerError(format!("could not store session: {e}")));
+    }
     let known = identity_store::get_identity(&pool, &did).await.map(|r| r.is_some()).unwrap_or(false);
     if !known {
         // Unknown identity that proved secret ownership: requires conscire
@@ -265,16 +258,13 @@ pub async fn create_identity(display_name: String, avatar: String) -> Result<New
     let secret = bs58::encode(signing_key.to_bytes()).into_string();
 
     let token = new_token();
-    match SESSIONS.lock() {
-        Ok(mut sessions) => {
-            sessions.insert(token.clone(), did.clone());
-        }
-        Err(_) => return Err(ServerFnError::ServerError("sessions locked".into())),
-    }
     let pool = match store_pool() {
         Some(p) => p,
         None => return Err(ServerFnError::ServerError("identity store not ready".into())),
     };
+    if let Err(e) = identity_store::insert_session(&pool, &token, &did).await {
+        return Err(ServerFnError::ServerError(format!("could not store session: {e}")));
+    }
     if let Err(e) = identity_store::insert_identity(
         &pool,
         &did,
@@ -291,13 +281,12 @@ pub async fn create_identity(display_name: String, avatar: String) -> Result<New
 /// Drop a session token.
 #[server]
 pub async fn sign_out(token: String) -> Result<(), ServerFnError> {
-    match SESSIONS.lock() {
-        Ok(mut sessions) => {
-            sessions.remove(&token);
-            Ok(())
-        }
-        Err(_) => Err(ServerFnError::ServerError("sessions locked".into())),
-    }
+    let pool = match store_pool() {
+        Some(p) => p,
+        None => return Ok(()),
+    };
+    let _ = identity_store::delete_session(&pool, &token).await;
+    Ok(())
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -418,8 +407,9 @@ pub fn read_flag(_key: &str) -> bool {
 /// delegation. The owner named in OWNER_DID holds them on the bootstrap
 /// path, while the delegation store is empty.
 #[cfg(feature = "ssr")]
-fn caller_did(token: &str) -> Option<String> {
-    SESSIONS.lock().ok()?.get(token).cloned()
+async fn caller_did(token: &str) -> Option<String> {
+    let pool = store_pool()?;
+    identity_store::get_session(&pool, token).await.ok().flatten()
 }
 
 #[cfg(feature = "ssr")]
@@ -460,7 +450,7 @@ async fn bootstrap_owner(did: &str) -> bool {
 /// path, while the delegation store is empty.
 #[cfg(feature = "ssr")]
 pub async fn require_admin(token: &str) -> Result<(), ServerFnError> {
-    let Some(did) = caller_did(token) else {
+    let Some(did) = caller_did(token).await else {
         return Err(ServerFnError::ServerError("No session. Sign in first.".into()));
     };
     if matches!(
@@ -480,7 +470,7 @@ pub async fn require_admin(token: &str) -> Result<(), ServerFnError> {
 /// Gate check behind a token: who is it, and does a delegation cover models?
 #[server]
 pub async fn gate_check(token: String) -> Result<Option<GateView>, ServerFnError> {
-    let Some(did) = caller_did(&token) else {
+    let Some(did) = caller_did(&token).await else {
         return Ok(None);
     };
     let models = matches!(
@@ -504,7 +494,7 @@ pub async fn gate_check(token: String) -> Result<Option<GateView>, ServerFnError
 /// Docs gate behind a token: who is it, and is it known to the store?
 #[server]
 pub async fn docs_content(token: String) -> Result<DocView, ServerFnError> {
-    let Some(did) = caller_did(&token) else {
+    let Some(did) = caller_did(&token).await else {
         return Err(ServerFnError::ServerError("No session. Sign in first.".into()));
     };
     let pool = match store_pool() {
@@ -518,7 +508,7 @@ pub async fn docs_content(token: String) -> Result<DocView, ServerFnError> {
 /// Waiting identities for the owner tools page. Caller must hold Admin.
 #[server]
 pub async fn pending_list(token: String) -> Result<Vec<PendingIdentity>, ServerFnError> {
-    let Some(did) = caller_did(&token) else {
+    let Some(did) = caller_did(&token).await else {
         return Err(ServerFnError::ServerError("No session. Sign in first.".into()));
     };
     if !matches!(level_of(&did).await, Some(exocore::protocol_internal::PermissionLevel::Admin)) {
@@ -555,7 +545,7 @@ pub async fn petition_access(did: String, display_name: String) -> Result<(), Se
 /// All pending petitions for the owner tools page. Caller must hold Admin.
 #[server]
 pub async fn list_petitions(token: String) -> Result<Vec<PetitionRow>, ServerFnError> {
-    let Some(did) = caller_did(&token) else {
+    let Some(did) = caller_did(&token).await else {
         return Err(ServerFnError::ServerError("No session. Sign in first.".into()));
     };
     if !matches!(level_of(&did).await, Some(exocore::protocol_internal::PermissionLevel::Admin)) {
@@ -573,7 +563,7 @@ pub async fn list_petitions(token: String) -> Result<Vec<PetitionRow>, ServerFnE
 /// Caller must hold Admin, except the bootstrapped owner on an empty store.
 #[server]
 pub async fn approve_petition(token: String, did: String) -> Result<(), ServerFnError> {
-    let Some(caller) = caller_did(&token) else {
+    let Some(caller) = caller_did(&token).await else {
         return Err(ServerFnError::ServerError("No session. Sign in first.".into()));
     };
     let did = did.trim().to_string();
@@ -610,7 +600,7 @@ pub async fn approve_petition(token: String, did: String) -> Result<(), ServerFn
 /// Refuse a petition. Caller must hold Admin.
 #[server]
 pub async fn refuse_petition(token: String, did: String) -> Result<(), ServerFnError> {
-    let Some(caller) = caller_did(&token) else {
+    let Some(caller) = caller_did(&token).await else {
         return Err(ServerFnError::ServerError("No session. Sign in first.".into()));
     };
     let did = did.trim().to_string();
@@ -633,7 +623,7 @@ pub async fn refuse_petition(token: String, did: String) -> Result<(), ServerFnE
 /// named in OWNER_DID on an empty store. Signed by the node identity.
 #[server]
 pub async fn grant_access(token: String, delegatee: String, level: String) -> Result<(), ServerFnError> {
-    let Some(did) = caller_did(&token) else {
+    let Some(did) = caller_did(&token).await else {
         return Err(ServerFnError::ServerError("No session. Sign in first.".into()));
     };
     let delegatee = delegatee.trim().to_string();
@@ -704,7 +694,7 @@ pub async fn grant_access(token: String, delegatee: String, level: String) -> Re
 /// Revoke a delegation. Caller must hold Admin.
 #[server]
 pub async fn revoke_access(token: String, delegatee: String) -> Result<(), ServerFnError> {
-    let Some(did) = caller_did(&token) else {
+    let Some(did) = caller_did(&token).await else {
         return Err(ServerFnError::ServerError("No session. Sign in first.".into()));
     };
     if !matches!(level_of(&did).await, Some(exocore::protocol_internal::PermissionLevel::Admin)) {
@@ -730,7 +720,7 @@ pub struct VisitorSettings {
 /// Read the visitor's server-side settings copy. Signed-in visitors only.
 #[server]
 pub async fn read_settings(token: String) -> Result<VisitorSettings, ServerFnError> {
-    let Some(did) = caller_did(&token) else {
+    let Some(did) = caller_did(&token).await else {
         return Err(ServerFnError::ServerError("No session. Sign in first.".into()));
     };
     let pool = match store_pool() {
@@ -749,7 +739,7 @@ pub async fn read_settings(token: String) -> Result<VisitorSettings, ServerFnErr
 /// The browser copy stays primary; this copy rides the Willow namespace on sync.
 #[server]
 pub async fn save_settings(token: String, settings: VisitorSettings) -> Result<(), ServerFnError> {
-    let Some(did) = caller_did(&token) else {
+    let Some(did) = caller_did(&token).await else {
         return Err(ServerFnError::ServerError("No session. Sign in first.".into()));
     };
     let pool = match store_pool() {
@@ -880,7 +870,7 @@ pub async fn user_avatar(did: String) -> Result<String, ServerFnError> {
 /// open to every signed-in user at all times.
 #[server]
 pub async fn update_profile(token: String, display_name: String, avatar: String) -> Result<(), ServerFnError> {
-    let Some(did) = caller_did(&token) else {
+    let Some(did) = caller_did(&token).await else {
         return Err(ServerFnError::ServerError("No session. Sign in first.".into()));
     };
     let display_name = display_name.trim().to_string();
@@ -909,7 +899,7 @@ pub async fn update_profile(token: String, display_name: String, avatar: String)
 /// creation while the owner flag is on, except for the owner.
 #[server]
 pub async fn delete_identity(token: String, did: String) -> Result<(), ServerFnError> {
-    let Some(caller) = caller_did(&token) else {
+    let Some(caller) = caller_did(&token).await else {
         return Err(ServerFnError::ServerError("No session. Sign in first.".into()));
     };
     let did = did.trim().to_string();
@@ -928,9 +918,7 @@ pub async fn delete_identity(token: String, did: String) -> Result<(), ServerFnE
     if let Err(e) = identity_store::delete_identity(&pool, &did).await {
         return Err(ServerFnError::ServerError(format!("could not remove identity: {e}")));
     }
-    if let Ok(mut s) = SESSIONS.lock() {
-        s.retain(|_, d| d != &did);
-    }
+    let _ = identity_store::delete_sessions_for_did(&pool, &did).await;
     Ok(())
 }
 
@@ -943,7 +931,7 @@ pub async fn get_flags() -> Result<SiteFlags, ServerFnError> {
 /// Set the mesh-wide site flags. Owner identities only.
 #[server]
 pub async fn set_flags(token: String, flags: SiteFlags) -> Result<(), ServerFnError> {
-    let Some(caller) = caller_did(&token) else {
+    let Some(caller) = caller_did(&token).await else {
         return Err(ServerFnError::ServerError("No session. Sign in first.".into()));
     };
     if !is_owner_did(&caller) {

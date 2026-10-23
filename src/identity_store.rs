@@ -363,3 +363,46 @@ pub struct BindingProofRow {
     pub proof: Vec<u8>,
     pub created_at: String,
 }
+
+/// Persist a session token bound to a DID. Overwrites any existing row for
+/// the same token.
+pub async fn insert_session(pool: &SqlitePool, token: &str, did: &str) -> Result<(), sqlx::Error> {
+    let created = now().to_string();
+    sqlx::query(
+        "INSERT INTO sessions (token, did, created_at) VALUES (?, ?, ?)
+         ON CONFLICT(token) DO UPDATE SET did = excluded.did, created_at = excluded.created_at",
+    )
+    .bind(token)
+    .bind(did)
+    .bind(created)
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
+/// Look up the DID behind a session token. None when unknown or expired.
+pub async fn get_session(pool: &SqlitePool, token: &str) -> Result<Option<String>, sqlx::Error> {
+    let row: Option<(String,)> = sqlx::query_as("SELECT did FROM sessions WHERE token = ?")
+        .bind(token)
+        .fetch_optional(pool)
+        .await?;
+    Ok(row.map(|r| r.0))
+}
+
+/// Remove one session token.
+pub async fn delete_session(pool: &SqlitePool, token: &str) -> Result<(), sqlx::Error> {
+    sqlx::query("DELETE FROM sessions WHERE token = ?")
+        .bind(token)
+        .execute(pool)
+        .await?;
+    Ok(())
+}
+
+/// Remove every session bound to a DID (used when an identity is deleted).
+pub async fn delete_sessions_for_did(pool: &SqlitePool, did: &str) -> Result<(), sqlx::Error> {
+    sqlx::query("DELETE FROM sessions WHERE did = ?")
+        .bind(did)
+        .execute(pool)
+        .await?;
+    Ok(())
+}
