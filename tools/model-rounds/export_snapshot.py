@@ -9,7 +9,7 @@ import sqlite3
 import sys
 from datetime import datetime, timezone
 
-BASE_DIR = "/home/exocrat/code/model-updates"
+BASE_DIR = "/home/exocrat/code/exosystems_net/tools/model-rounds/data"
 DB_PATH = f"{BASE_DIR}/models.db"
 
 

@@ -7,11 +7,11 @@
 
 ## Context and Problem Statement
 
-The initial state is an empty store with the fixed schema and a helper identity for the node. No migration step exists.
+The initial state is an empty store with the fixed schema and a conscia identity for the node. No migration step exists.
 
 ## Decision
 
-Boot performs exactly: create the five schema tables when absent; generate the node's helper identity when absent and store it as the single helper-kind row; start the conscire endpoint, the relay, and the synchronisation listener. The static allowlist file is deleted; boot and sign-in read the store.
+Boot performs exactly: create the five schema tables when absent; generate the node's conscia identity when absent and store it as the single conscia-kind row; start the conscire endpoint, the relay, and the synchronisation listener. The static allowlist file is deleted; boot and sign-in read the store.
 
 Sign-in performs exactly: accept the presented identity code; complete the challenge-response round against the identity secret; look up the identity and its delegations in the store; admit when a valid delegation covers the request and refuse otherwise. Unknown identities are not admitted by sign-in; they enter only through the conscire endpoint with owner approval, which writes the identity, delegation, and binding rows that later sign-ins read.
 

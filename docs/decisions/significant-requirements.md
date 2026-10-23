@@ -35,7 +35,7 @@ kept in the user's own Willow namespace and synced to conscired
 nodes, never decrypted by the node (identity foundation §§7–8). No
 static allowlist anywhere: `allowed_dids.json` is deleted and boot
 plus sign-in read the store (pending row 7). Manual setup mirrors a
-fresh install: generate the node's helper identity, conscire each SR1
+fresh install: generate the node's conscia identity, conscire each SR1
 account through the endpoint, and persist the resulting delegations,
 binding proofs, and namespaces — the same shape a fresh ExoTalk
 install plus its own Lighthouse Conscia node produces on its own.

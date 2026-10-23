@@ -8,7 +8,7 @@ Accepted
 
 ExoAuth is the identity system of the Exosystem family: it creates,
 holds, and recovers a self-made online identity. Identities are of two
-kinds, person and helper-node, both `did:peer` — a self-created
+kinds, exotalk and conscia, both `did:peer` — a self-created
 identity code that lives with the user as the root of trust. Identity
 and permission checks anchor in the Rust engine layer (Exocore) so
 every client opens the same identity; the portable identity logic
@@ -41,7 +41,7 @@ the gated docs view are browser-proven on the vendored radix stack
 (record: `style-bespoke-over-behavior-primitives.md`): full navigation
 round trip, identity generation, and gate checks with zero console
 errors. Sessions are bearer tokens; the approved list seeds at server
-boot from `allowed_dids.json`. Secret ownership is proven at sign-in
+boot from the SQLite identity store. Secret ownership is proven at sign-in
 (record: `prove-secret-ownership-at-sign-in.md`); recovery and
 multi-device export run through the Profile Bundle (record:
 `recover-and-move-exotalk-profile-across-devices.md`).

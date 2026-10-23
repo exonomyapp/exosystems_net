@@ -11,7 +11,7 @@ The local application exercises sign-in, sharing, synchronisation, and discovery
 
 ## Decision
 
-Provision by hand on the instance exactly once: install the daemon build, start it to generate the helper identity and the empty store, admit the proof accounts through the management interface, and verify the proof run. No supervision, backup, or upgrade procedure is established for this instance beyond keeping the process alive for the proof window.
+Provision by hand on the instance exactly once: install the daemon build, start it to generate the conscia identity and the empty store, admit the proof accounts through the management interface, and verify the proof run. No supervision, backup, or upgrade procedure is established for this instance beyond keeping the process alive for the proof window.
 
 Durable node management belongs to the ExoMetro implementation, whose first priority is managing Conscia nodes. Repeatable deployment belongs to the flavors deployment record. This instance is retired or rebuilt from those lines once they land.
 

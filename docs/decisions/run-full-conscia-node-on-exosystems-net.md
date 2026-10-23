@@ -17,7 +17,7 @@ Willow is the content-addressed sync layer. User content persists and syncs thro
 The node implements the full Conscia feature set.
 
 **Identity and Access:**
-- Own did:peer (helper-node identity)
+- Own did:peer (conscia identity)
 - Meadowcap capability system: Ed25519-signed delegations `{delegator, delegatee, namespace, permission, signature}` exchanged over Iroh gossip and HTTP
 - Operator approval via ConSoul admin interface
 

@@ -20,8 +20,8 @@ from datetime import datetime
 # CONFIGURATION
 # ============================================================
 
-# Use /home/exocrat/code/model-updates as base directory
-BASE_DIR = "/home/exocrat/code/model-updates"
+# Use /home/exocrat/code/exosystems_net/tools/model-rounds/data as base directory
+BASE_DIR = "/home/exocrat/code/exosystems_net/tools/model-rounds/data"
 
 ALIBABA_API_KEY_FILE = "/home/exocrat/Downloads/Default Workspace-apiKey-1293585.csv"
 ALIBABA_BASE_URL = "https://llm-3hfej6js6ima0lmv.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1"
@@ -58,7 +58,7 @@ MAX_WORKERS = 8
 PROVISIONAL_DAYS = 90
 
 # Public report page. The messaging alert carries this link and nothing else.
-REPORT_URL = "https://exonomyapp.github.io/model-updates/"
+REPORT_URL = "https://exonomyapp.github.io/models/"
 
 # Open model catalogue used to corroborate context figures that the
 # provider catalogues do not publish.
@@ -233,7 +233,7 @@ def fetch_models_dev_entries():
     round can proceed when the network copy is unreachable.
     """
     try:
-        req = urllib.request.Request(MODELS_DEV_URL, headers={"User-Agent": "model-updates/1.0"})
+        req = urllib.request.Request(MODELS_DEV_URL, headers={"User-Agent": "models/1.0"})
         with urllib.request.urlopen(req, timeout=90) as response:
             data = json.loads(response.read().decode())
         with open(CONTEXT_CACHE_FILE, "w") as f:

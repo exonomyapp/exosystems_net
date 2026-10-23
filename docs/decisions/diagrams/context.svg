@@ -44,7 +44,7 @@
     <text x="294" y="264" font-size="12" font-style="italic">reads back</text>
     <text x="790" y="248" font-size="12" font-style="italic">passes in</text>
     <text x="44" y="508" font-size="12" letter-spacing="1">DWG C4-01 — System context: sheet 1 of the C4 set (Context, Containers, Components, Code).</text>
-    <text x="44" y="528" font-size="11">Shows people on the local machine, the site application, the helper node, and the front door on the instance.</text>
+    <text x="44" y="528" font-size="11">Shows people on the local machine, the site application, the conscia node, and the front door on the instance.</text>
     <text x="44" y="546" font-size="11">Flows: (a) sign-in and page reads, (b) conscire handshake, (c) local publish with read-back, (d) ingress to the site.</text>
     <text x="44" y="570" font-size="11" font-style="italic">Notation: dashed rectangles are trust boundaries; solid rectangles are runnable units; arrows are flows.</text>
     <text x="894" y="516" font-size="11">v0.1.0 · 2026-09-28</text>

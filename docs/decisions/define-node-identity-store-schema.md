@@ -13,7 +13,7 @@ Four flows touch the same database: sign-in checks identity and delegations, the
 
 Five tables, all keyed by explicit identity or namespace strings, none by row alias:
 
-- `identities(did TEXT PRIMARY KEY, kind TEXT, created_at TEXT, binding_proof_id TEXT)`: one row per conscired person or helper identity. The kind distinguishes person identities from the node's own helper identity. The proof reference links to the binding table.
+- `identities(did TEXT PRIMARY KEY, kind TEXT, created_at TEXT, binding_proof_id TEXT)`: one row per conscired exotalk or conscia identity. The kind distinguishes exotalk identities from the node's own conscia identity. The proof reference links to the binding table.
 - `delegations(id TEXT PRIMARY KEY, delegator TEXT, delegatee TEXT, namespace TEXT, permission TEXT, signature BLOB, expires_at TEXT)`: one row per granted power. The signature is the Ed25519 delegation envelope; expiry bounds every grant so revocation has a ceiling even before explicit withdrawal.
 - `binding_proofs(id TEXT PRIMARY KEY, did TEXT, proof BLOB, created_at TEXT)`: one row per ownership proof. The proof binds the identity to its recovery material without storing secrets.
 - `namespace_sync_state(did TEXT, namespace TEXT, last_reconciled TEXT, pending INTEGER, PRIMARY KEY(did, namespace))`: one row per identity per namespace. The reconciled marker drives incremental sync; the pending flag marks unreconciled local writes, so every local write remains marked pending until acknowledged.

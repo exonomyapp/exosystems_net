@@ -8,7 +8,7 @@ Proposed
 
 The local ExoTalk build is the client that conscires with the
 instance Conscia node and syncs. Consciring is the relationship
-handshake between a person's identity and a helper node: the person
+handshake between an exotalk identity and a conscia node: the exotalk
 presents their `did:peer`, the node's owner approves under the
 node's own policies, and the two stay in sync afterwards. The
 mechanism is the join flow in Spec 11 §11.4. Signing in gates the

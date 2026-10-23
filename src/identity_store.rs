@@ -6,7 +6,9 @@
 //! Boot and sign-in now read the SQLite store instead.
 
 use serde::{Deserialize, Serialize};
+use sqlx::sqlite::SqliteConnectOptions;
 use sqlx::SqlitePool;
+use std::str::FromStr;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 pub use crate::auth::PetitionRow;
@@ -16,8 +18,10 @@ const IDENTITY_DB: &str = "exostorage/identity.db";
 
 /// Open (creating if necessary) the identity store database and run migrations.
 pub async fn open() -> Result<SqlitePool, sqlx::Error> {
-    std::fs::create_dir_all("exostorage").ok();
-    let pool = SqlitePool::connect(IDENTITY_DB).await?;
+    std::fs::create_dir_all("exostorage")?;
+    let opts = SqliteConnectOptions::from_str(IDENTITY_DB)?
+        .create_if_missing(true);
+    let pool = SqlitePool::connect_with(opts).await?;
     migrate(&pool).await?;
     Ok(pool)
 }

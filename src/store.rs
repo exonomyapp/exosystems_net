@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 /// Boltstore reachability for server functions.
 #[cfg(feature = "ssr")]
 fn store_base() -> String {
-    std::env::var("MODEL_UPDATES_STORE").unwrap_or_else(|_| "http://127.0.0.1:8080".into())
+    std::env::var("MODELS_STORE").unwrap_or_else(|_| "http://127.0.0.1:8080".into())
 }
 
 /// One registry row as served for the dashboard.
@@ -26,7 +26,7 @@ pub struct ModelRow {
 /// Registry rows for the dashboard views.
 #[server]
 pub async fn registry_rows() -> Result<Vec<ModelRow>, ServerFnError> {
-    let key = match std::env::var("MODEL_UPDATES_DASH_KEY") {
+    let key = match std::env::var("MODELS_DASH_KEY") {
         Ok(k) => k,
         Err(_) => return Err(ServerFnError::ServerError("dashboard key unset".into())),
     };

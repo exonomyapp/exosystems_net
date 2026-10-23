@@ -118,7 +118,7 @@ pub struct PetitionRow {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GateView {
     pub did: String,
-    pub model_updates: bool,
+    pub models: bool,
     pub admin: bool,
 }
 
@@ -469,7 +469,7 @@ pub async fn gate_check(token: String) -> Result<Option<GateView>, ServerFnError
             p.insert(did.clone());
         }
     }
-    Ok(Some(GateView { did, model_updates: models, admin }))
+    Ok(Some(GateView { did, models: models, admin }))
 }
 
 /// Docs gate behind a token: who is it, and is it known to the store?

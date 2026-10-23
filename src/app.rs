@@ -143,7 +143,7 @@ struct IdentityState {
     did: String,
     display_name: String,
     avatar: String,
-    model_updates: bool,
+    models: bool,
     admin: bool,
 }
 
@@ -160,7 +160,7 @@ fn load_identity() -> Resource<Option<IdentityState>> {
                 did: gate.did.clone(),
                 display_name,
                 avatar,
-                model_updates: gate.model_updates,
+                models: gate.models,
                 admin: gate.admin,
             })
         },
@@ -179,7 +179,7 @@ fn FloatingGadgets(identity: Resource<Option<IdentityState>>) -> impl IntoView {
             <div class="brandrow">
             <img src="/exosys.png" alt="ExoSystems" class="navbar-logo"/>
             <div class="navbar-menu">
-                {move || identity.get().flatten().filter(|id| id.model_updates).map(|_| view! { <A href="/models">"Models"</A> })}
+                {move || identity.get().flatten().filter(|id| id.models).map(|_| view! { <A href="/models">"Models"</A> })}
                 {move || match identity.get().flatten() {
                     Some(id) => view! {
                         <span class="chip-wrap">
@@ -822,7 +822,7 @@ fn DocsPage() -> impl IntoView {
     view! {
         <Suspense fallback=|| view! { <p>"Checking identity…"</p> }>
             {move || {
-                let named = models_gate.get().flatten().map(|v| (v.model_updates, v.did)).unwrap_or((false, String::new()));
+                let named = models_gate.get().flatten().map(|v| (v.models, v.did)).unwrap_or((false, String::new()));
                 view! {
                     <SectionPage show_models=named.0 display_name=named.1 current="docs">
                         <SectionHead title="Docs." subtitle=None/>
@@ -892,7 +892,7 @@ fn ModelsPage() -> impl IntoView {
     view! {
         <Suspense fallback=|| view! { <p>"Checking identity…"</p> }>
             {move || gate.get().map(|g| match g {
-                Some(v) if v.model_updates => {
+                Some(v) if v.models => {
                     let name = v.did.clone();
                     view! {
                         <SectionPage show_models=true display_name=name current="models">
@@ -1264,7 +1264,7 @@ fn SettingsPage() -> impl IntoView {
                 Some(v) => {
                     let admin = v.admin;
                     let did = v.did.clone();
-                    let named = (v.model_updates, v.did.clone());
+                    let named = (v.models, v.did.clone());
                     let apply = apply.clone();
                     view! {
 <SectionPage show_models=named.0 display_name=named.1 current="settings">

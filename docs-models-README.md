@@ -6,8 +6,8 @@ Automated verification of language models served by external providers. Each rou
 
 | Part | Role |
 |------|------|
-| Leptos interface at `models.exosystems.net` | Dashboard with live filtering, sorting, provider management, and round operations. Full page without carousel, logically part of Exosystems.net. The Models menu item renders only for signed-in identities holding the model-updates meadowcap delegation. |
-| Boltstore database `model-updates` | Hosted store. Holds test results, the model registry, round history, and provider records. Reached over the HTTP API. |
+| Leptos interface at `models.exosystems.net` | Dashboard with live filtering, sorting, provider management, and round operations. Full page without carousel, logically part of Exosystems.net. The Models menu item renders only for signed-in identities holding the models meadowcap delegation. |
+| Boltstore database `models` | Hosted store. Holds test results, the model registry, round history, and provider records. Reached over the HTTP API. |
 | Willow capabilities namespace | Delegation home. Holds approvals and meadowcap delegation rows for sign-in gating and the Models menu item. The website gate reads this store directly after sign-in. |
 | Local `models.db` | Seed figures for the hosted database, carried from verified rounds. |
 
@@ -48,7 +48,7 @@ Rounds run from the hosted site on exosystems.net. The Monday and Thursday Herme
 
 ## Dashboard
 
-The dashboard serves provider multi-pick filtering, model checkboxes, three-state sorting with up and down triangles, search-as-keystroke across provider and model name, the Runs above Models stacked layout, date-only Last tested, appearance and width controls with light, dark, and system modes, and a settings page with provider management reading and writing the hosted database. Signed-in user settings travel in the user's Willow namespace and sync to every device where the identity signs in; unauthenticated visitor settings stay in browser storage only. Menu visibility follows meadowcap delegations: signed-in identities holding the model-updates delegation see the Models item, and unauthenticated visitors never see it. The provider picker mechanism ports the oc-worker multi-select approach; appearance and width controls port the shared UI work.
+The dashboard serves provider multi-pick filtering, model checkboxes, three-state sorting with up and down triangles, search-as-keystroke across provider and model name, the Runs above Models stacked layout, date-only Last tested, appearance and width controls with light, dark, and system modes, and a settings page with provider management reading and writing the hosted database. Signed-in user settings travel in the user's Willow namespace and sync to every device where the identity signs in; unauthenticated visitor settings stay in browser storage only. Menu visibility follows meadowcap delegations: signed-in identities holding the models delegation see the Models item, and unauthenticated visitors never see it. The provider picker mechanism ports the oc-worker multi-select approach; appearance and width controls port the shared UI work.
 
 ## Current State
 
