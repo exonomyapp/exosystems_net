@@ -69,7 +69,6 @@ Pass: the local build conscires to the instance node, publishes a
 test entry locally, syncs, reads it back through the gated docs view
 for the author and reader accounts while the stranger stays refused,
 then revokes and confirms sync stops. Records:
-`run-full-conscia-node-on-exosystems-net.md`,
 `keep-local-synced-willow-store.md`,
 `conscire-local-exotalk-with-instance-node.md`.
 

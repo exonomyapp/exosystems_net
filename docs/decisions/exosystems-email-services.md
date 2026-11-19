@@ -46,6 +46,28 @@ The domain's mailboxes are `support@exosystems.net`, `noreply@exosystems.net`, `
 
 Addendum 2026-10-22 — the stack named above is installed on the instance and running. Postfix accepts the domain on port 25 and delivers to Maildir, Dovecot serves IMAPS on port 993 against the `mail.exosystems.net` certificate, nginx serves Roundcube at `mail.exosystems.net` over HTTPS, and PHP-FPM is the runtime. The `mail.exosystems.net` certificate was issued by the instance's certbot installation and joins the schedule named above, renewing twenty-one days before expiry on the twelve-hourly timer. Roundcube holds its state in a SQLite file of its own at `/var/lib/roundcubemail/db.sqlite`, and it reaches the instance's own IMAP service through a loopback entry for `mail.exosystems.net`, because the instance cannot reach its own public address. A message submitted to the Brevo relay from the instance was delivered.
 
+### Instance Hardening (Applied 2026-10-31)
+
+The following hardening measures were applied to the mail stack on the Tencent Lighthouse instance to satisfy Tencent CWPP compliance without breaking the mail design:
+
+**Postfix TLS Enforcement**
+- `smtpd_tls_security_level = encrypt` (inbound: require STARTTLS)
+- `smtp_tls_security_level = encrypt` (outbound: require STARTTLS to Brevo relay)
+
+**Explicit Relay Restrictions**
+- `smtpd_recipient_restrictions = permit_sasl_authenticated, permit_mynetworks, reject_unauth_destination`
+- Prevents the instance from being an open relay
+
+**Brute-Force Protection**
+- `sshguard` installed and active with firewalld integration
+- Monitors Postfix, Dovecot, and SSH auth logs
+- Automatically blocks IPs with repeated authentication failures via firewalld ipsets
+
+**Credential Storage Migration**
+- Brevo SMTP credentials moved from Roundcube PHP config (`/etc/roundcubemail/config.inc.php`) to `/opt/exosystems_net/env` (mode 600, root:root)
+- Roundcube config updated to read `BREVO_SMTP_LOGIN` and `BREVO_SMTP_KEY` via `getenv()`
+- PHP-FPM service configured with `EnvironmentFile=/opt/exosystems_net/env` via systemd drop-in
+
 ### Domain authentication
 
 The sending domain is authenticated in Brevo under domain id `6aada8b5ee7878abf5091646`, with DNS as the authentication method. The zone at Hostinger carries these records:
@@ -154,13 +176,18 @@ The free Brevo plan allows 300 transactional sends per day, with up to 1,000 fur
 
 The mail stack adds two listening services to the instance, a mail transfer agent on port 25 and an IMAP service on port 993. The instance hardening review follows the installation, and `docs/harden.md` is updated to cover the new services.
 
-## Not yet carried out
+### Not yet carried out
 
-The following are specified above and are not yet in place as of 2026-10-22:
+The following are specified above and are not yet in place as of 2026-10-31:
 
 - The inbound TCP port 25 rule in the Lighthouse firewall. The mail stack itself is installed and running; the rule at the edge of the Tencent network is the part outstanding, and the same applies to the TCP port 993 rule that carries IMAP from outside.
 - The sending path in the node, the webhook subscription, the suppression list and the report record.
 - The Rust aggregate-report parser and the authorized source registry it maintains.
 - The suppression and opt-out section of the Settings page.
+
+The following have been completed:
+- Brevo SMTP credentials migrated from Roundcube config to `/opt/exosystems_net/env`
+- Postfix TLS enforcement and relay restrictions applied
+- sshguard brute-force protection installed and active
 
 The sending path in the node and the records it keeps wait on the Conscia node running on the instance, which is not yet deployed there. The Brevo account holds no webhook until that node serves an endpoint to subscribe.

@@ -138,7 +138,7 @@ The diagrams were held to the same standard. The two architecture sheets for the
 | 2026-09-27 | The three significant requirements set; the node records begin | `ses_f206c711dffeiH4Y1puy58Q9Fl` |
 | 2026-09-28 | The node database choice accepted; the networking-library migration recorded | `docs/decisions/` |
 | 2026-09-29 | The node record set written: schema, boot and sign-in, plain-node scope, operator policy, cadence, storage routing, replication, upgrade verification, conflict merge, discovery, emails, flavours | `ses_f18652580ffeoi9bN4FfA7exeo` |
-| 2026-09-29 | The RKE2 cluster plan replaced by the hand-provisioned instance and the flavour plan | `docs/decisions/plan-repeatable-deployment-of-three-flavors.md` |
+|| 2026-09-29 | The RKE2 cluster plan replaced by the hand-provisioned instance and the flavour plan | — |
 | 2026-10-02 | DBOS and PostgreSQL deployment to the instance recorded | `docs/decisions/deploy-exo-mcp-with-dbos-and-postgres-to-lighthouse.md` |
 | 2026-10-06/07 | The exosystems gateway registration removed; the Alibaba provider registered in Hermes | hermes `20261006_222922_81c4b3`, `20261007_153537_287cb2` |
 | 2026-10-08 | The Models project moved onto the site with boltstore; the delegation path settled to Willow direct; the application-layer notification record written | `ses_ee20aa2c6ffeP7QDG5vc5nCztl`, `docs/decisions/application-layer-notifications-over-willow-gossip.md` |

@@ -62,3 +62,7 @@ The companion crates `iroh-blobs` (latest 0.103.0) and `iroh-gossip` (latest 0.1
 - crates registry: `iroh` 1.1.0, `iroh-base` 1.1.0, `sqlx` 0.9.0, `sqlx-postgres` 0.9.0 dependency and feature APIs
 - `sqlx` changelog 0.9.0 (2026-05-06)
 - `iroh` releases 0.98.0 through 1.1.0
+
+## Addendum 2026-10-26
+
+The iroh line has advanced to 1.4.1 (crates registry, 2026-10-26). This repository's lockfile resolves `iroh` 1.4.1, `iroh-blobs` 0.103.1, and `iroh-gossip` 0.101.0, with the vendored `exocore` declaring the `iroh` 1.4 requirement, so the networking migration is in effect on the exosystems.net side. The exotalk workspace lockfile still resolves `iroh` 0.98.2 and `iroh-gossip` 0.98.0 with the Conscia daemon on `sqlx` 0.8.3, so the Conscia side of the migration remains open and the `sqlx` 0.9.0 step remains behind it (pending row 8). No 1.x releases of `iroh-blobs` or `iroh-gossip` were published as of 2026-10-26; the companion-crates verification gate stands against `iroh` 1.4.1 with the 0.x companions at 0.103.1 and 0.101.0. The working-versus-published status of the full stack is held in `docs/reports/version_status.md`.

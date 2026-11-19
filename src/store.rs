@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 /// Boltstore reachability for server functions.
 #[cfg(feature = "ssr")]
 fn store_base() -> String {
-    std::env::var("MODELS_STORE").unwrap_or_else(|_| "http://127.0.0.1:8080".into())
+    std::env::var("MODELS_STORE").unwrap_or_else(|_| "http://127.0.0.1:52417".into())
 }
 
 /// One registry row as served for the dashboard.

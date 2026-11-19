@@ -10,6 +10,9 @@ between them are the way they are.
 |--------|--------|------|------|
 | No. | Record | Status | Date | Deps |
 |-----|--------|--------|------|------|
+| 46 | [Adapt the home page to the signed-in identity](adapt-the-home-page-to-the-signed-in-identity.md) | Proposed | 2026-10-26 | R7, R11, R27, R33 |
+| 45 | [Install the Conscierge plugin and become node-aware](install-the-conscierge-plugin-and-become-node-aware.md) | Proposed | 2026-10-26 | R11, R38, R41 |
+| 44 | [Present the ExoWorker chat to visitors](present-the-exoworker-chat-to-visitors.md) | Proposed | 2026-10-26 |  |
 | 41 | [Ship the nginx configuration with the deployment](ship-the-nginx-configuration-with-the-deployment.md) | Proposed | 2026-10-22 | R31, R3 |
 | 40 | [Manage the domain's mailboxes from the Settings console](manage-mailboxes-from-the-settings-console.md) | Proposed | 2026-10-22 | R23, R39 |
 | 39 | [Provision the authenticated settings profile on the instance](provision-the-authenticated-settings-profile.md) | Proposed | 2026-10-22 | R23, R33 |
@@ -31,10 +34,7 @@ between them are the way they are.
 | 24 | [Replicate Archon rows to the Willow store](replicate-archon-rows-to-willow-store.md) | Proposed | 2026-09-29 |  |
 | 23 | [Exosystems email services](exosystems-email-services.md) | Proposed | 2026-10-21 |  |
 | 22 | [Send triggered administrative emails from the node](send-triggered-administrative-emails-from-node.md) | Proposed | 2026-09-29 |  |
-| 21 | [Plan repeatable deployment of the three Conscia flavors](plan-repeatable-deployment-of-three-flavors.md) | Proposed | 2026-09-29 |  |
-| 20 | [Resolve two-device write conflicts by union](resolve-two-device-write-conflicts-by-union.md) | Proposed | 2026-09-29 |  |
-| 19 | [Set synchronisation cadence beyond sign-in and reconnect](set-sync-cadence-beyond-sign-in.md) | Proposed | 2026-09-29 |  |
-| 18 | [Run the temporary hand-provisioned node](run-temporary-hand-provisioned-node.md) | Proposed | 2026-09-29 |  |
+|| 18 | [Run the temporary hand-provisioned node](run-temporary-hand-provisioned-node.md) | Proposed | 2026-09-29 |  |
 | 17 | [Set operator policy with a management interface](set-operator-policy-and-management-ui.md) | Proposed | 2026-09-29 |  |
 | 16 | [Build fresh boot and sign-in on the node store](build-fresh-boot-and-sign-in-on-node-store.md) | Proposed | 2026-09-29 |  |
 | 15 | [Define the node identity store schema](define-node-identity-store-schema.md) | Proposed | 2026-09-29 |  |
@@ -47,9 +47,8 @@ between them are the way they are.
 | 8 | [Require a decision record with watched code changes](require-decision-record-with-code-change.md) | Proposed | 2026-09-27 | R3 |
 | 7 | [Keep a local synced Willow store per signed-in identity](keep-local-synced-willow-store.md) | Proposed | 2026-09-27 | R2, R4, R6 |
 | 6 | [Recover and move ExoTalk profile across devices](recover-and-move-exotalk-profile-across-devices.md) | Proposed | 2026-09-27 |  |
-| 5 | [Prove secret ownership at sign-in](prove-secret-ownership-at-sign-in.md) | Proposed | 2026-09-27 |  |
-| 4 | [Run full Conscia node on exosystems.net](run-full-conscia-node-on-exosystems-net.md) | Proposed | 2026-09-27 |  |
-| 3 | [Set up GitHub repository and CI pipeline](set-up-github-repo-and-ci-pipeline.md) | Proposed | 2026-09-27 |  |
+|| 5 | [Prove secret ownership at sign-in](prove-secret-ownership-at-sign-in.md) | Proposed | 2026-09-27 |  |
+|| 3 | [Set up GitHub repository and CI pipeline](set-up-github-repo-and-ci-pipeline.md) | Proposed | 2026-09-27 |  |
 | 2 | [Generate peer identity early and sign in with it](exosystems-exoauth.md) | Accepted | 2026-09-26 | R4, R5, R6, R7, R9, R11 |
 | 1 | [Use Leptos 0.8 with server rendering](use-leptos-0-8-with-ssr.md) | Accepted | 2026-09-26 |  |
 

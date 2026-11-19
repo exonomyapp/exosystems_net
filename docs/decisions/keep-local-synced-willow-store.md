@@ -11,8 +11,7 @@ synced content; the gated docs view is the first such page (record:
 `exosystems-exoauth.md`). Sessions resolve three local stores —
 public, shared-by-permission, private. The instance Conscia node holds
 encrypted user content in Willow namespaces and forwards on
-connection (record: `run-full-conscia-node-on-exosystems-net.md`).
-Willow is the content-addressed sync layer shared by node and client.
+connection. Willow is the content-addressed sync layer shared by node and client.
 The client side below names which namespaces the local application
 keeps, when it syncs, and what counts as synced.
 

@@ -60,7 +60,6 @@ keep their own records: challenge-response secret ownership
 `src/auth.rs:117`) and the Profile Bundle export/import
 (`recover-and-move-exotalk-profile-across-devices.md`). Consciring
 and the synced store that complete the gate are tracked in
-`run-full-conscia-node-on-exosystems-net.md`,
 `keep-local-synced-willow-store.md`, and
 `conscire-local-exotalk-with-instance-node.md`.
 

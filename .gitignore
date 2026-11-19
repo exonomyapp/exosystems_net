@@ -6,3 +6,10 @@ secrets/*
 !secrets/.gitkeep
 docs/harden.md
 exostorage/
+
+# Local developer environment (holds credentials)
+.env
+
+# Local tooling artifacts
+.taste-skill/
+tools/model-rounds/data/

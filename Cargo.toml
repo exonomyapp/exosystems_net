@@ -61,5 +61,5 @@ site-root = "target/site"
 site-pkg-dir = "pkg"
 style-file = "style/main.scss"
 assets-dir = "assets"
-site-addr = "127.0.0.1:3001"
-reload-port = 3002
+site-addr = "127.0.0.1:52415"
+reload-port = 52416

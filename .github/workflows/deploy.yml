@@ -68,9 +68,24 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_KEY }}
+          envs: HOSTINGER_API_TOKEN,TENCENTCLOUD_SECRET_ID,TENCENTCLOUD_SECRET_KEY,BREVO_SMTP_LOGIN,BREVO_SMTP_KEY,BREVO_API_KEY
           script: |
             set -e
             mkdir -p /opt/exosystems_net/bin /opt/exosystems_net/site
+            umask 077
+            cat > /opt/exosystems_net/secrets.env <<EOF
+            HOSTINGER_API_TOKEN='${HOSTINGER_API_TOKEN}'
+            TENCENTCLOUD_SECRET_ID='${TENCENTCLOUD_SECRET_ID}'
+            TENCENTCLOUD_SECRET_KEY='${TENCENTCLOUD_SECRET_KEY}'
+            BREVO_SMTP_LOGIN='${BREVO_SMTP_LOGIN}'
+            BREVO_SMTP_KEY='${BREVO_SMTP_KEY}'
+            BREVO_API_KEY='${BREVO_API_KEY}'
+            EOF
+            chmod 600 /opt/exosystems_net/secrets.env
+            grep -q 'exosystems_net/secrets.env' /root/.bashrc 2>/dev/null || cat >> /root/.bashrc <<'RC'
+            # Operator credentials for managing Exosystems resources
+            if [ -f /opt/exosystems_net/secrets.env ]; then set -a; . /opt/exosystems_net/secrets.env; set +a; fi
+            RC
             systemctl stop exosystems-net || true
             cp /opt/exosystems_net/incoming/deploy/exosystems_net-ssr /opt/exosystems_net/bin/exosystems_net-ssr
             chmod +x /opt/exosystems_net/bin/exosystems_net-ssr
