@@ -7,7 +7,7 @@ The register of open decisions is this file. The session transfer report at `doc
 
 | # | Decision | Blocked on | Lands in |
 |---|----------|------------|----------|
-|| 1 | Provision the plain node on the instance by hand | Instance access window; conscia identity generation | `define-plain-node-scope-with-discovery.md` addendum with live evidence |
+| 1 | Provision the plain node on the instance by hand | Instance access window; conscia identity generation | `define-plain-node-scope-with-discovery.md` addendum with live evidence |
 | 2 | Create the GitHub repo and turn on the pipeline — closed 2026-10-22 | The repository and the pipeline are live; the addendum is in `set-up-github-repo-and-ci-pipeline.md` | `set-up-github-repo-and-ci-pipeline.md` addendum on first green deploy |
 | 3 | Build challenge-response secret ownership | Sign-in flow settled (done); crypto review of nonce store | `prove-secret-ownership-at-sign-in.md` Accepted |
 | 4 | Build Profile Bundle export/import | Secret ownership (3); second-device test | `recover-and-move-exotalk-profile-across-devices.md` Accepted |
