@@ -71,15 +71,35 @@ jobs:
           BREVO_SMTP_LOGIN: ${{ secrets.BREVO_SMTP_LOGIN }}
           BREVO_SMTP_KEY: ${{ secrets.BREVO_SMTP_KEY }}
           BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+          MODEL_UPDATES_DASH_KEY: ${{ secrets.MODEL_UPDATES_DASH_KEY }}
+          OWNER_DID: ${{ secrets.OWNER_DID }}
+          NODE_DID: ${{ secrets.NODE_DID }}
+          NODE_SECRET: ${{ secrets.NODE_SECRET }}
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_KEY }}
-          envs: HOSTINGER_API_TOKEN,TENCENTCLOUD_SECRET_ID,TENCENTCLOUD_SECRET_KEY,BREVO_SMTP_LOGIN,BREVO_SMTP_KEY,BREVO_API_KEY
+          envs: HOSTINGER_API_TOKEN,TENCENTCLOUD_SECRET_ID,TENCENTCLOUD_SECRET_KEY,BREVO_SMTP_LOGIN,BREVO_SMTP_KEY,BREVO_API_KEY,MODEL_UPDATES_DASH_KEY,OWNER_DID,NODE_DID,NODE_SECRET
           script: |
             set -e
             mkdir -p /opt/exosystems_net/bin /opt/exosystems_net/site
-            umask 077
+            umask 022
+            cat > /opt/exosystems_net/env <<EOF
+            LEPTOS_SITE_ROOT=/opt/exosystems_net/site
+            LEPTOS_SITE_ADDR=127.0.0.1:3000
+            LEPTOS_OUTPUT_NAME=exosystems_net
+            LEPTOS_SITE_PKG_DIR=pkg
+            MODEL_UPDATES_STORE=http://127.0.0.1:8080
+            MODEL_UPDATES_DASH_KEY='${MODEL_UPDATES_DASH_KEY}'
+            OWNER_DID='${OWNER_DID}'
+            NODE_DID='${NODE_DID}'
+            NODE_SECRET='${NODE_SECRET}'
+            BREVO_SMTP_LOGIN='${BREVO_SMTP_LOGIN}'
+            BREVO_SMTP_KEY='${BREVO_SMTP_KEY}'
+            BREVO_API_KEY='${BREVO_API_KEY}'
+            RUST_BACKTRACE=1
+            EOF
+            chmod 600 /opt/exosystems_net/env
             cat > /opt/exosystems_net/secrets.env <<EOF
             HOSTINGER_API_TOKEN='${HOSTINGER_API_TOKEN}'
             TENCENTCLOUD_SECRET_ID='${TENCENTCLOUD_SECRET_ID}'
@@ -98,6 +118,7 @@ jobs:
             chmod +x /opt/exosystems_net/bin/exosystems_net-ssr
             rm -rf /opt/exosystems_net/site/pkg
             cp -r /opt/exosystems_net/incoming/deploy/site/* /opt/exosystems_net/site/
+            chmod -R a+rX /opt/exosystems_net/site
             cat > /etc/systemd/system/exosystems-net.service <<'UNIT'
             [Unit]
             Description=ExoSystems.net Leptos site
@@ -117,6 +138,9 @@ jobs:
             sleep 5
             curl -sf http://127.0.0.1:3000/ | head -c 200
             echo "DEPLOY-OK"
+            curl -sf -o /dev/null http://127.0.0.1:3000/pkg/exosystems_net.css
+            curl -sf -o /dev/null http://127.0.0.1:3000/pkg/exosystems_net.wasm
+            echo "ASSETS-OK"
             # The front door comes from the repository. Each configuration
             # file is copied into place, tested, and only then loaded; a file
             # that fails the test is put back the way it was.
