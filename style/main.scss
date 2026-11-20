@@ -27,6 +27,46 @@
          * Type ladder: a single modular scale of ratio 1.2 on the fluid root.
          * ============================================================================ */
 
+        /* Product title strip. One definition owns the size, spacing, type and
+         * fade shape for every card title. A reversed strip differs only in
+         * direction, never in any other measurement. */
+        @mixin product-strip($direction: to right) {
+            grid-row: 1;
+            grid-column: 1;
+            align-self: start;
+            justify-self: stretch;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5em;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            color: #f8fafc;
+            padding: 0.55em 0.85em;
+            margin: 0.5em 0.5em 0;
+            border-radius: var(--radius-sm);
+            font-size: 1.44em;
+            line-height: 1.2;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            overflow-wrap: break-word;
+            background: linear-gradient($direction, var(--strip-color) 0%, var(--strip-color) 66.666%, transparent 100%);
+        }
+
+        /* A clickable action that sits at the solid end of a title strip. */
+        @mixin strip-action {
+            flex: 0 0 20%;
+            width: 20%;
+            display: grid;
+            place-items: center;
+            padding: 0;
+            border: 1px solid rgba(248, 250, 252, 0.55);
+            border-radius: var(--radius-sm);
+            background: rgba(248, 250, 252, 0.12);
+            color: #f8fafc;
+            cursor: pointer;
+        }
+
         :root {
             /* The page colour is set once, here, for each appearance. The
              * header carries no background of its own, so the photographs
@@ -489,33 +529,13 @@
         }
 
         .face.front h3 {
-            grid-row: 1;
-            grid-column: 1;
-            align-self: start;
-            justify-self: stretch;
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
-            background: linear-gradient(to right, #443377 0%, #443377 66.666%, #44337700 100%);
-            color: #f8fafc;
-            padding: 0.55em 0.85em 0.55em 0.85em;
-            margin: 0.5em 0.5em 0;
-            border-radius: var(--radius-sm);
-            font-size: 1.44em;
-            line-height: 1.2;
-            font-weight: 600;
-            letter-spacing: -0.01em;
-            overflow-wrap: break-word;
+            --strip-color: #443377;
+            @include product-strip;
         }
 
-        .family > .flip:nth-child(1) .face.front h3 {
-            background: linear-gradient(to right, #5f48a6 0%, #5f48a6 66.666%, #5f48a600 100%);
-        }
-        .family > .flip:nth-child(2) .face.front h3 {
-            background: linear-gradient(to right, #1e73e6 0%, #1e73e6 66.666%, #1e73e600 100%);
-        }
-        .family > .flip:nth-child(3) .face.front h3 {
-            background: linear-gradient(to right, #60a830 0%, #60a830 66.666%, #60a83000 100%);
-        }
+        .family > .flip:nth-child(1) .face.front h3 { --strip-color: #5f48a6; }
+        .family > .flip:nth-child(2) .face.front h3 { --strip-color: #1e73e6; }
+        .family > .flip:nth-child(3) .face.front h3 { --strip-color: #60a830; }
 
         .art {
             grid-row: 2;
@@ -610,33 +630,16 @@
             line-height: 1.2;
             color: var(--text);
             visibility: visible;
-            pointer-events: none;
             overflow-wrap: break-word;
         }
 
         .backlabel.exonovel {
-            justify-self: stretch;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.5em;
-            background: linear-gradient(to left, #443377 0%, #443377 66.666%, #44337700 100%);
-            border-radius: var(--radius-sm);
+            --strip-color: #443377;
+            @include product-strip($direction: to left);
         }
 
-        .backlabel.exonovel .toexonovel {
-            display: grid;
-            place-items: center;
-            flex: none;
-            width: 1.6em;
-            height: 1.2em;
-            padding: 0;
-            border: 0;
-            background: none;
-            color: #f8fafc;
-            cursor: pointer;
-        }
-        .backlabel.exonovel .toexonovel svg { width: 1.1em; height: 1.1em; }
+        .strip-action { @include strip-action; }
+        .strip-action svg { width: 1.1em; height: 1.1em; }
 
         /* Scroll jump controls. The only absolute placement in the interface,
          * because they must escape the card's scroll flow. They sit well off
