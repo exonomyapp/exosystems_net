@@ -71,22 +71,22 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
     }
 }
 
-const CARDS: [(&str, &str, &str); 8] = [
-    ("ExoTalk", "/cards/exotalk.png",
+const CARDS: [(&str, &str, &str, &str, bool, &str); 8] = [
+    ("ExoTalk", "/cards/exotalk.png", "#5f48a6", "", false,
      "The Exosystem's flagship app: private, encrypted messaging that runs natively on your phone and desktop. It is your personal node on the network, carrying your identity and keeping every conversation peer to peer — connecting directly when possible and passing through blind relays only when it must. Every other Exosystem app unfolds inside it, arriving as subscriptions you manage in your settings, and it can even create and manage Conscia service nodes on your behalf. Because apps update through signed blueprints delivered over the mesh, the interface of everything you subscribe to evolves the moment its author publishes. Sign-ins, subscriptions, and app updates all flow through it, making one app the solid front door to the whole family."),
-    ("ExoSoul", "/cards/exosoul.png",
+    ("ExoSoul", "/cards/exosoul.png", "#1e73e6", "", false,
      "The studio where every Exosystem app is authored — the press where each app is formed into a signed blueprint. One identity authors here; ExoTalk users subscribe, and the app unfolds on their devices with its interface driven by the blueprint, so a published change reaches every subscriber instantly. Every blueprint is a canonical app payload whose exact bytes are pinned by a digest, so what unfolds on a device is always precisely what was signed. Blueprints compose other blueprints only through digest-pinned includes with parent-owned overrides, keeping every app's lineage exact and verifiable. ExoSoul itself is a native app, and Conscia nodes host and relay its blueprints as a service."),
-    ("Conscia", "/cards/conscia.png",
+    ("Conscia", "/cards/conscia.png", "var(--conscia-green)", "", false,
      "The lifeline of the Exosystem: always-on nodes that relay messages, discover peers, answer petitions, and keep data reachable while your devices are offline — opt-in helper services. Every node app runs peer to peer independently; when one is present it can carry relay, indexing, discovery, persistence, authentication, observability, and federation, routing geographically and by latency. Its relationship worker handles petitions, federation, and indexing while its operator console administers each node, in small, community, and large clustered flavors — with a large node planned at exosystems.net itself — and a Conscierge worker coordinates the nodes with one another and reaches beyond the mesh. Blind indexing can also surface community circles and public directories through one unified search surface."),
-    ("Exonomy", "/cards/exonomy.png",
+    ("Exonomy", "/cards/exonomy.png", "#443377", "", false,
      "Social voucher exchange. Members — Exonomists — mint and trade vouchers that stand for real goods and services, optionally bought or sold for everyday money; the voucher itself carries the value. It arrives as an app inside ExoTalk, and while its vouchers can optionally fund Exocracy tasks, it operates entirely independently by default — a fully realized ecosystem of structured value exchange. Native apps carry it onto phones and desktops for managing heavy voucher ledgers, and an indexing node hosts encrypted voucher payloads blindly, surfacing only the metadata its owners choose to publish."),
-    ("Exocracy", "/cards/exocracy.png",
+    ("Exocracy", "/cards/exocracy.png", "#443377", "", false,
      "Transparent project governance — the governance layer of the mesh. Communities run projects with open proposals, votes, and milestones, funded with ordinary money or, optionally, Exonomy vouchers; that funding choice is engineered interoperability, and a project runs entirely on ordinary money when its manager prefers. Built for high-trust environments where organizational transparency and independent project management matter most, it connects with ExoTalk, Exonomy, and the rest of the family while standing entirely on its own. Native apps put real-time voting and task tracking in your pocket, and an indexing node keeps open tasks and bounties publicly searchable."),
-    ("RepubLet", "/cards/republet.png",
+    ("RepubLet", "/cards/republet.png", "#443377", "", false,
      "Decentralized scientific publishing and peer review — a modern Republic of Letters, the knowledge ledger of the mesh. Researchers' work lives on permanent, hash-anchored records with cryptographically verifiable authorship, and author-facing paywalls offer a decentralized alternative to subscription platforms for earning from one's own findings — settled in ordinary money, cryptocurrency, or, optionally, Exonomy vouchers. A scientist who initiates an Exocracy project to manage and fund research is stringing together independent modular tools. Native apps carry reading and peer-review notifications onto phones and desktops, and a citation relay keeps open-science metadata publicly searchable."),
-    ("ThreeSteps (3S)", "/cards/threesteps.png",
+    ("ThreeSteps (3S)", "/cards/threesteps.png", "#443377", "", false,
      "A private, offline-first social app for Catholic families and communities — helping children grow in faith through Baptism, First Communion, and Confirmation. Here social means relationships, guidance, and formation, and privacy means total discretion for those practicing in regions where faith requires it. Conversations connect directly when possible and pass through blind relays when they must, with local-first storage and cryptographic access control — so it keeps working through limited connectivity. Identity flows through ExoAuth, the family's shared identity layer, and missionaries, catechists, and parish groups meet the wider Exosystem through Conscia nodes."),
-    ("ExoNovel", "/cards/internovel.png",
+    ("ExoNovel", "/cards/internovel.png", "#443377", "https://exonovel.exosystems.net", true,
      "Collaborative storytelling for young authors. Each writer's contributions are digitally signed — every paragraph permanently linked to the identity that wrote it — so authorship stays verifiable and intellectual property stays with its creator. Characters can travel between stories through the Travel Trunk, the Novel Spine holds each story's structure, and novels are written together under unanimous consent. Flexible collaboration, clear attribution, and protected ownership make it a writing home that grows with its authors, and each novel unfolds inside ExoTalk as one of the family's apps."),
 ];
 
@@ -98,6 +98,11 @@ const ICON_MOON: &str = "<path d=\"M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.02
 const ICON_WIDTH: &str = "<path d=\"M8 3H5a2 2 0 0 0-2 2v3\"/><path d=\"M21 8V5a2 2 0 0 0-2-2h-3\"/><path d=\"M3 16v3a2 2 0 0 0 2 2h3\"/><path d=\"M16 21h3a2 2 0 0 0 2-2v-3\"/>";
 const ICON_WIDTH_FIT: &str = "<path d=\"M8 3v3a2 2 0 0 1-2 2H3\"/><path d=\"M21 8h-3a2 2 0 0 1-2-2V3\"/><path d=\"M3 16h3a2 2 0 0 1 2 2v3\"/><path d=\"M16 21v-3a2 2 0 0 1 2-2h3\"/>";
 const ICON_GEAR: &str = "<path d=\"M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/>";
+
+/* Lucide glyphs (ISC): profile marks and the chevron-blue card arrow. */
+const ICON_USER_ROUND: &str = "<circle cx=\"12\" cy=\"8\" r=\"5\"/><path d=\"M20 21a8 8 0 0 0-16 0\"/>";
+const ICON_USER_ROUND_PLUS: &str = "<path d=\"M2 21a8 8 0 0 1 13.292-6\"/><circle cx=\"10\" cy=\"8\" r=\"5\"/><path d=\"M19 16v6\"/><path d=\"M22 19h-6\"/>";
+const ICON_ARROW_BIG_RIGHT: &str = "<path d=\"M13.207 19.793a.707.707 0 0 1-1.207-.5V16a1 1 0 0 0-1-1H5a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h6a1 1 0 0 0 1-1V4.707a.707.707 0 0 1 1.207-.5l6.94 6.94a1.207 1.207 0 0 1 0 1.707z\"/>";
 
 /// Whether the client has taken over from the server's markup.
 ///
@@ -148,9 +153,18 @@ struct IdentityState {
 }
 
 fn load_identity() -> Resource<Option<IdentityState>> {
+    // A resource serializes its server value into the page. The token lives in
+    // browser storage, which the server cannot read, so the server value is
+    // always signed out. Making client readiness the source forces a refetch
+    // once the browser has taken over; navigating between pages then creates a
+    // fresh resource that loads the session immediately.
+    let client = use_context::<ClientReady>().expect("ClientReady provided at App root");
     Resource::new(
-        || (),
-        |_| async move {
+        move || client.0.get(),
+        |ready| async move {
+            if !ready {
+                return None;
+            }
             let token = read_token()?;
             let gate = gate_check(token).await.ok()??;
             let avatar = user_avatar(gate.did.clone()).await.unwrap_or_default();
@@ -189,16 +203,31 @@ fn FloatingGadgets(identity: Resource<Option<IdentityState>>) -> impl IntoView {
                         </span>
                         {chip_open.get().then(|| view! {
                             <span class="chip-dropdown">
-                                <A href="/settings">"Profile gear"</A>
-                                {move || users.get().map(|list| list.into_iter().map(|u| {
-                                    let (did, name) = (u.did.clone(), u.display_name.clone());
-                                    view! {
-                                        <span class="chip-user" on:click=move |_| {
-                                            if switch_session(&did) { set_chip_open.set(false); }
-                                        }>{name}</span>
-                                    }
-                                }).collect::<Vec<_>>())}
-                                <A href="/signin">"Add identity"</A>
+                                <A href="/settings" attr:class="chip-menu-item">
+                                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <g inner_html=ICON_USER_ROUND/>
+                                    </svg>
+                                    <span>"Profile"</span>
+                                </A>
+                                <A href="/signin" attr:class="chip-menu-item">
+                                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <g inner_html=ICON_USER_ROUND_PLUS/>
+                                    </svg>
+                                    <span>"Add identity"</span>
+                                </A>
+                                {move || {
+                                    let current = identity.get().flatten().map(|id| id.did).unwrap_or_default();
+                                    users.get().map(|list| list.into_iter()
+                                        .filter(|u| u.did != current)
+                                        .map(|u| {
+                                            let (did, name) = (u.did.clone(), u.display_name.clone());
+                                            view! {
+                                                <span class="chip-user" on:click=move |_| {
+                                                    if switch_session(&did) { set_chip_open.set(false); }
+                                                }>{name}</span>
+                                            }
+                                        }).collect::<Vec<_>>())
+                                }}
                             </span>
                         })}
                         </span>
@@ -441,14 +470,48 @@ fn HomePage() -> impl IntoView {
         </header>
         <main class="main">
             <section class="family">
-                {CARDS.iter().map(|(title, art, full)| view! { <FlipCard title=*title art=*art full=*full/> }).collect::<Vec<_>>()}
+                {CARDS.iter().map(|(title, art, accent, url, enabled, full)| view! { <FlipCard title=*title art=*art accent=*accent url=*url enabled=*enabled full=*full/> }).collect::<Vec<_>>()}
             </section>
         </main>
     }
 }
 
+/// Click handler shared by every card action button.
+fn open_app_handler(
+    set_flipped: WriteSignal<bool>,
+    enabled: bool,
+    url: &'static str,
+) -> impl Fn(leptos::ev::MouseEvent) + 'static {
+    move |ev: leptos::ev::MouseEvent| {
+        ev.stop_propagation();
+        if !enabled {
+            return;
+        }
+        set_flipped.set(false);
+        #[cfg(not(target_arch = "wasm32"))]
+        let _ = url;
+        #[cfg(target_arch = "wasm32")]
+        {
+            use wasm_bindgen::prelude::*;
+            let go = wasm_bindgen::closure::Closure::once_into_js(|| {
+                if let Some(window) = web_sys::window() {
+                    let _ = window.location().assign(url);
+                }
+            });
+            if let Some(window) = web_sys::window() {
+                let _ = window.set_timeout_with_callback_and_timeout_and_arguments_0(
+                    go.unchecked_ref(),
+                    900,
+                );
+            }
+        }
+    }
+}
+
 #[component]
-fn FlipCard(title: &'static str, art: &'static str, full: &'static str) -> impl IntoView {
+fn FlipCard(title: &'static str, art: &'static str, accent: &'static str, url: &'static str, enabled: bool, full: &'static str) -> impl IntoView {
+    #[cfg(not(target_arch = "wasm32"))]
+    let _ = url;
     let (flipped, set_flipped) = signal(false);
     let full_ref: NodeRef<leptos::html::Div> = NodeRef::new();
     let (show_top, set_show_top) = signal(false);
@@ -481,27 +544,6 @@ fn FlipCard(title: &'static str, art: &'static str, full: &'static str) -> impl 
         }
     };
 
-    let is_exonovel = title == "ExoNovel";
-    let open_exonovel = move |ev: leptos::ev::MouseEvent| {
-        ev.stop_propagation();
-        set_flipped.set(false);
-        #[cfg(target_arch = "wasm32")]
-        {
-            use wasm_bindgen::prelude::*;
-            let go = wasm_bindgen::closure::Closure::once_into_js(|| {
-                if let Some(window) = web_sys::window() {
-                    let _ = window.location().assign("https://exonovel.exosystems.net");
-                }
-            });
-            if let Some(window) = web_sys::window() {
-                let _ = window.set_timeout_with_callback_and_timeout_and_arguments_0(
-                    go.unchecked_ref(),
-                    900,
-                );
-            }
-        }
-    };
-
     view! {
         <div class="flip" on:click=move |_| {
             set_flipped.set(!flipped.get());
@@ -513,25 +555,25 @@ fn FlipCard(title: &'static str, art: &'static str, full: &'static str) -> impl 
             }
         }>
             <div class="flip-box" class:flipped=move || flipped.get()>
-                <div class="face front">
+                <div class="face front" style:--strip-color=accent>
                     <div class="art">
                         <img src=art alt=title/>
                     </div>
                     <h3>{title}</h3>
                 </div>
-                <div class="face back">
+                <div class="face back" style:--strip-color=accent>
                     <div class="full" node_ref=full_ref on:scroll=on_scroll
                         class:ftop=move || fade_top.get()
                         class:fbot=move || fade_bottom.get()>
                         <p>{full}</p>
                     </div>
-                    <h3 class="backlabel" class:exonovel=is_exonovel>
+                    <h3 class="backlabel" class:active=enabled>
                         {title}
-                        {is_exonovel.then(|| view! {
-                            <button type="button" class="strip-action" on:click=open_exonovel aria-label="Open ExoNovel">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+                        <span class="strip-actions" class:active=enabled>
+                            <button type="button" class="strip-action" on:click=open_app_handler(set_flipped, enabled, url) aria-label="Open ExoNovel">
+                                <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><g inner_html=ICON_ARROW_BIG_RIGHT/></svg>
                             </button>
-                        })}
+                        </span>
                     </h3>
                     <button type="button" class="tobot" class:show=move || show_bottom.get() on:click=scroll_to_bottom aria-label="Jump to bottom">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>

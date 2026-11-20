@@ -53,18 +53,21 @@
             background: linear-gradient($direction, var(--strip-color) 0%, var(--strip-color) 66.666%, transparent 100%);
         }
 
-        /* A clickable action that sits at the solid end of a title strip. */
+        /* Shared geometry for every card action button: a slightly wide square
+         * with a small corner radius, not a pill or a bare icon. */
         @mixin strip-action {
-            flex: 0 0 20%;
-            width: 20%;
+            width: 3.795em;
+            height: 2.875em;
+            padding: 0;
+            border: 1px solid transparent;
+            border-radius: 0.22rem;
             display: grid;
             place-items: center;
-            padding: 0;
-            border: 1px solid rgba(248, 250, 252, 0.55);
-            border-radius: var(--radius-sm);
-            background: rgba(248, 250, 252, 0.12);
-            color: #f8fafc;
             cursor: pointer;
+            transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
+            &:hover { transform: translateY(-1px); filter: brightness(1.08); }
+            &:active { transform: translateY(1px); }
+            &:focus-visible { outline: 2px solid #f8fafc; outline-offset: 2px; }
         }
 
         :root {
@@ -86,6 +89,10 @@
             --border: #d9dde5;
             --accent: #1f5fc4;
             --accent-soft: #dbe7fb;
+            --chevron-green: #60aa34;
+            --chevron-blue: #1e74e6;
+            --chevron-blue-dark: color-mix(in srgb, var(--chevron-blue) 85%, black);
+            --conscia-green: #60a830;
             --nav-bg: #14161a;
             --radius-sm: 0.375rem;
             --radius: 0.5rem;
@@ -529,13 +536,8 @@
         }
 
         .face.front h3 {
-            --strip-color: #443377;
             @include product-strip;
         }
-
-        .family > .flip:nth-child(1) .face.front h3 { --strip-color: #5f48a6; }
-        .family > .flip:nth-child(2) .face.front h3 { --strip-color: #1e73e6; }
-        .family > .flip:nth-child(3) .face.front h3 { --strip-color: #60a830; }
 
         .art {
             grid-row: 2;
@@ -632,13 +634,24 @@
             overflow-wrap: break-word;
         }
 
-        .backlabel.exonovel {
-            --strip-color: #443377;
-            @include product-strip($direction: to left);
-        }
+        .backlabel.active { @include product-strip($direction: to left); }
 
+        .strip-actions:not(.active) { display: none; }
+        .strip-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.3em;
+        }
         .strip-action { @include strip-action; }
-        .strip-action svg { width: 1.1em; height: 1.1em; }
+        .strip-action svg { width: 2.645em; height: 2.645em; display: block; }
+
+        .strip-action {
+            background: var(--chevron-blue-dark);
+            border-color: rgba(255, 255, 255, 0.35);
+            color: var(--conscia-green);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 3px 8px rgba(2, 6, 23, 0.35);
+        }
 
         /* Scroll jump controls. The only absolute placement in the interface,
          * because they must escape the card's scroll flow. They sit well off
@@ -660,7 +673,18 @@
             pointer-events: none;
             transition: opacity 0.3s ease;
         }
-        .totop { inset-block-start: 1em; inset-inline-end: 1em; }
+        /* The back-to-top control shares the description's grid row, so it
+         * lands just below the title strip instead of covering it. */
+        .totop {
+            position: static;
+            grid-row: 2;
+            grid-column: 1;
+            align-self: start;
+            justify-self: end;
+            margin-block-start: var(--sp2);
+            margin-inline-end: 1em;
+            z-index: 1;
+        }
         .tobot { inset-block-end: 1em; inset-inline-end: 1em; }
         .totop.show, .tobot.show { opacity: 0.6; pointer-events: auto; }
         .totop svg, .tobot svg { width: 1.725em; height: 1.725em; }
@@ -902,6 +926,7 @@
         .chip-user:hover { background: var(--accent-soft); color: var(--text); }
         .chip-user { cursor: pointer; }
         .chip-user span { overflow: hidden; text-overflow: ellipsis; }
+        .chip-menu-item svg { width: var(--ctl-icon); height: var(--ctl-icon); flex: none; }
 
         /* ============================================================================
          * SECTION PAGES — heading and card layouts
