@@ -569,9 +569,7 @@
             grid-template-rows: auto minmax(0, 1fr);
             grid-template-columns: minmax(0, 1fr);
             gap: 1.4em;
-            /* Measured against the card, not the text, so the margin around the
-             * text holds its proportion instead of vanishing as the card grows. */
-            padding: clamp(1.6rem, 5.6cqi, 3.4rem);
+            padding: 0;
             background: var(--surface);
         }
 
@@ -587,6 +585,7 @@
         .full {
             grid-row: 2;
             grid-column: 1;
+            margin: clamp(1.6rem, 5.6cqi, 3.4rem);
             /* minmax(0, 1fr) above plus min-width 0 here means the text can never
              * widen the card, whatever it contains. */
             overflow-y: auto;
