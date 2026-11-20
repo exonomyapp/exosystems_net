@@ -86,7 +86,7 @@ const CARDS: [(&str, &str, &str); 8] = [
      "Decentralized scientific publishing and peer review — a modern Republic of Letters, the knowledge ledger of the mesh. Researchers' work lives on permanent, hash-anchored records with cryptographically verifiable authorship, and author-facing paywalls offer a decentralized alternative to subscription platforms for earning from one's own findings — settled in ordinary money, cryptocurrency, or, optionally, Exonomy vouchers. A scientist who initiates an Exocracy project to manage and fund research is stringing together independent modular tools. Native apps carry reading and peer-review notifications onto phones and desktops, and a citation relay keeps open-science metadata publicly searchable."),
     ("ThreeSteps (3S)", "/cards/threesteps.png",
      "A private, offline-first social app for Catholic families and communities — helping children grow in faith through Baptism, First Communion, and Confirmation. Here social means relationships, guidance, and formation, and privacy means total discretion for those practicing in regions where faith requires it. Conversations connect directly when possible and pass through blind relays when they must, with local-first storage and cryptographic access control — so it keeps working through limited connectivity. Identity flows through ExoAuth, the family's shared identity layer, and missionaries, catechists, and parish groups meet the wider Exosystem through Conscia nodes."),
-    ("InterNovel", "/cards/internovel.png",
+    ("ExoNovel", "/cards/internovel.png",
      "Collaborative storytelling for young authors. Each writer's contributions are digitally signed — every paragraph permanently linked to the identity that wrote it — so authorship stays verifiable and intellectual property stays with its creator. Characters can travel between stories through the Travel Trunk, the Novel Spine holds each story's structure, and novels are written together under unanimous consent. Flexible collaboration, clear attribution, and protected ownership make it a writing home that grows with its authors, and each novel unfolds inside ExoTalk as one of the family's apps."),
 ];
 
@@ -481,6 +481,27 @@ fn FlipCard(title: &'static str, art: &'static str, full: &'static str) -> impl 
         }
     };
 
+    let is_exonovel = title == "ExoNovel";
+    let open_exonovel = move |ev: leptos::ev::MouseEvent| {
+        ev.stop_propagation();
+        set_flipped.set(false);
+        #[cfg(target_arch = "wasm32")]
+        {
+            use wasm_bindgen::prelude::*;
+            let go = wasm_bindgen::closure::Closure::once_into_js(|| {
+                if let Some(window) = web_sys::window() {
+                    let _ = window.location().assign("https://exonovel.exosystems.net");
+                }
+            });
+            if let Some(window) = web_sys::window() {
+                let _ = window.set_timeout_with_callback_and_timeout_and_arguments_0(
+                    go.unchecked_ref(),
+                    900,
+                );
+            }
+        }
+    };
+
     view! {
         <div class="flip" on:click=move |_| {
             set_flipped.set(!flipped.get());
@@ -504,7 +525,14 @@ fn FlipCard(title: &'static str, art: &'static str, full: &'static str) -> impl 
                         class:fbot=move || fade_bottom.get()>
                         <p>{full}</p>
                     </div>
-                    <h3 class="backlabel">{title}</h3>
+                    <h3 class="backlabel" class:exonovel=is_exonovel>
+                        {title}
+                        {is_exonovel.then(|| view! {
+                            <button type="button" class="toexonovel" on:click=open_exonovel aria-label="Open ExoNovel">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+                            </button>
+                        })}
+                    </h3>
                     <button type="button" class="tobot" class:show=move || show_bottom.get() on:click=scroll_to_bottom aria-label="Jump to bottom">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
                     </button>
