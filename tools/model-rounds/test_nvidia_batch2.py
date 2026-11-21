@@ -4,7 +4,12 @@ import time
 import sys
 import sqlite3
 
-api_key = "***REMOVED***"
+from nvidia_key import get_nvidia_key
+
+api_key = get_nvidia_key()
+if not api_key:
+    print("No NVIDIA API key found")
+    sys.exit(1)
 base_url = "https://integrate.api.nvidia.com/v1"
 headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
 

@@ -16,6 +16,8 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
+from nvidia_key import get_nvidia_key
+
 # ============================================================
 # CONFIGURATION
 # ============================================================
@@ -26,7 +28,6 @@ BASE_DIR = "/home/exocrat/code/exosystems_net/tools/model-rounds/data"
 ALIBABA_API_KEY_FILE = "/home/exocrat/Downloads/Default Workspace-apiKey-1293585.csv"
 ALIBABA_BASE_URL = "https://llm-3hfej6js6ima0lmv.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1"
 
-NVIDIA_API_KEY = "***REMOVED***"
 NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1"
 
 OPENCODE_CONFIG_PATH = os.path.expanduser("~/.config/opencode/opencode.json")
@@ -648,7 +649,11 @@ def test_alibaba_models(conn):
 
 
 def test_nvidia_models(conn):
-    headers = {"Authorization": f"Bearer {NVIDIA_API_KEY}", "Content-Type": "application/json"}
+    api_key = get_nvidia_key()
+    if not api_key:
+        print("No NVIDIA API key found")
+        return
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
     return test_provider(conn, "nvidia", NVIDIA_BASE_URL, headers)
 
 
